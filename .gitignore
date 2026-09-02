@@ -1,0 +1,8 @@
+# Ignore node_modules in office-harmony-hub
+frontend/node_modules/
+
+# Ignore node_modules in back
+backend/node_modules/
+
+backend/.env
+frontend/.env

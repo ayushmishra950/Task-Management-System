@@ -1,0 +1,24 @@
+services:
+  # 1️⃣ Frontend static site
+  - type: web
+    name: office-harmony-hub-frontend
+    env: static
+    branch: main
+    buildCommand: cd office-harmony-hub && npm install && npm run build
+    publishPath: office-harmony-hub/dist
+    envVars:
+      - key: REACT_APP_API
+        value: https://check-backend-10nk.onrender.com
+
+  # 2️⃣ Backend dynamic service
+  - type: web
+    name: oms-backend
+    env: node
+    branch: main
+    buildCommand: cd back && npm install
+    startCommand: cd back && node app.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        value: mongodb+srv://ayush950mishra_db_user:iuUhdtXDPxuy4aka@cluster0.btmz2f0.mongodb.net/
