@@ -17,5 +17,5 @@ services:
       dockerfile: Dockerfile
     container_name: frontend
     ports:
-      - "80:80"
+      - "10000:10000"
     restart: unless-stopped
