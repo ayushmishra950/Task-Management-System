@@ -4,7 +4,6 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import {errorHandler} from "./middlewares/error.middleware.ts";
 import path from "path";
-import { fileURLToPath } from "url";
 
 // SuperAdmin Routes
 import superAdminRoutes from "./routes/superAdmin/superAdmin.route.ts";
@@ -62,9 +61,6 @@ app.use(cors({origin:[env.PRODUCTION_FRONTEND_URL], methods:["POST", "GET", "PUT
 // FRONTEND BUILD
 // =========================
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const frontendPath = path.join(process.cwd(), "./build");
 
 app.use(express.static(frontendPath));
@@ -73,6 +69,7 @@ app.use(express.static(frontendPath));
 // =========================
 // FRONTEND SPA FALLBACK
 // =========================
+
 // React SPA fallback
 app.get("/{*splat}", (req, res, next) => {
   if (req.path.startsWith("/api/")) {
