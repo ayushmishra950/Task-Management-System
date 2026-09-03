@@ -42,7 +42,7 @@ const TaskManager = () => {
   const { toast } = useToast();
   const user = JSON.parse(localStorage.getItem("user"));
   const [deleteManager, {isLoading:isDeleting}] = useDeleteManagerMutation();
-  const { data, refetch } = useGetAllManagerQuery({
+  const { data, refetch, isLoading:allManagerLoading } = useGetAllManagerQuery({
     companyId: user?.companyId,
   },{skip:!user?.id || !user?.role});
   const managers = data?.data || [];
@@ -174,7 +174,42 @@ const TaskManager = () => {
                 </TableHeader>
 
                 <TableBody>
-                  {filteredManagers?.length ? (
+                  {
+                   allManagerLoading ? (
+                      // Loading rows
+                      Array.from({ length: 5 }).map((_, index) => (
+                        <TableRow key={index} className="animate-pulse">
+                          <TableCell className="w-10 px-2 md:px-4">
+                            <div className="h-4 w-4 bg-gray-200 rounded" />
+                          </TableCell>
+                  
+                          <TableCell className="px-2 md:px-4">
+                            <div className="h-4 w-24 md:w-40 bg-gray-200 rounded" />
+                          </TableCell>
+                  
+                          <TableCell className="hidden md:table-cell px-4">
+                            <div className="h-4 w-28 bg-gray-200 rounded" />
+                          </TableCell>
+                  
+                          <TableCell className="px-2 md:px-4">
+                            <div className="h-4 w-28 bg-gray-200 rounded" />
+                          </TableCell>
+                  
+                          <TableCell className="hidden md:table-cell px-4">
+                            <div className="h-5 w-16 bg-gray-200 rounded-full" />
+                          </TableCell>
+                  
+                          <TableCell className="px-2 md:px-4">
+                            <div className="h-5 w-20 bg-gray-200 rounded-full" />
+                          </TableCell>
+                  
+                          <TableCell className="text-right px-2 md:px-4">
+                            <div className="h-7 w-7 bg-gray-200 rounded ml-auto" />
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) :
+                  filteredManagers?.length ? (
                     filteredManagers.map((manager) => (
                       <TableRow
                         key={manager._id}
