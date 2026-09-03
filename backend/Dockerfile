@@ -11,7 +11,7 @@ COPY package*.json ./
 # Install all dependencies
 RUN npm ci
 
-# Copy source code
+# Copy source code + frontend build
 COPY . .
 
 # Type-check + build TypeScript to JavaScript
@@ -33,8 +33,11 @@ COPY package*.json ./
 # Install only production dependencies
 RUN npm ci --omit=dev
 
-# Copy production build
+# Copy backend compiled JavaScript
 COPY --from=builder /app/dist ./dist
+
+# Copy React frontend build
+COPY --from=builder /app/build ./build
 
 # Your backend port
 EXPOSE 5000
