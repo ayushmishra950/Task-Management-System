@@ -65,7 +65,7 @@ app.use(cors({origin:[env.PRODUCTION_FRONTEND_URL], methods:["POST", "GET", "PUT
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const frontendPath = path.join(__dirname, "../build");
+const frontendPath = path.join(__dirname, "./build");
 
 app.use(express.static(frontendPath));
 
@@ -73,14 +73,13 @@ app.use(express.static(frontendPath));
 // =========================
 // FRONTEND SPA FALLBACK
 // =========================
+// React SPA fallback
+app.get("/{*splat}", (req, res, next) => {
+  if (req.path.startsWith("/api/")) {
+    return next();
+  }
 
-// /api request agar kisi route se match nahi hui
-// to frontend index.html serve nahi karna hai.
-//
-// Baaki sab routes React frontend ko jayenge.
-
-app.get("*", (req, res, next) => {
-  if (req.path.startsWith("/api")) {
+  if (req.path.startsWith("/socket.io/")) {
     return next();
   }
 
