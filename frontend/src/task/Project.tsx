@@ -92,7 +92,7 @@ const Project: React.FC = () => {
   const [updateProjectStatus, { isLoading: isUpdateStatus }] =
     useUpdateProjectStatusMutation();
   const [deleteProject, { isLoading: isDeleting }] = useDeleteProjectMutation();
-  const { data, refetch:allProjectRefetch } = useGetAllProjectQuery(
+  const { data, refetch:allProjectRefetch, isLoading: isProjectsLoading } = useGetAllProjectQuery(
     { companyId: user?.companyId },
     {
       skip:
@@ -376,7 +376,41 @@ const Project: React.FC = () => {
                 </TableHeader>
 
                 <TableBody>
-                  {filteredProjects.length ? (
+                  {isProjectsLoading ? (
+    // Loading rows
+    Array.from({ length: 5 }).map((_, index) => (
+      <TableRow key={index} className="animate-pulse">
+        <TableCell className="w-10 px-2 md:px-4">
+          <div className="h-4 w-4 bg-gray-200 rounded" />
+        </TableCell>
+
+        <TableCell className="px-2 md:px-4">
+          <div className="h-4 w-24 md:w-40 bg-gray-200 rounded" />
+        </TableCell>
+
+        <TableCell className="hidden md:table-cell px-4">
+          <div className="h-4 w-28 bg-gray-200 rounded" />
+        </TableCell>
+
+        <TableCell className="px-2 md:px-4">
+          <div className="h-4 w-28 bg-gray-200 rounded" />
+        </TableCell>
+
+        <TableCell className="hidden md:table-cell px-4">
+          <div className="h-5 w-16 bg-gray-200 rounded-full" />
+        </TableCell>
+
+        <TableCell className="px-2 md:px-4">
+          <div className="h-5 w-20 bg-gray-200 rounded-full" />
+        </TableCell>
+
+        <TableCell className="text-right px-2 md:px-4">
+          <div className="h-7 w-7 bg-gray-200 rounded ml-auto" />
+        </TableCell>
+      </TableRow>
+    ))
+  ) :
+                  filteredProjects.length ? (
                     filteredProjects.map((project) => (
                       <TableRow
                         key={project._id}

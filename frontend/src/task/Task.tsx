@@ -91,7 +91,7 @@ const Task: React.FC = () => {
   const [bulkTaskInitialData, setBulkTaskInitialData] = useState<any[]>([]);
   const [deleteTask, { isLoading: isDeleting }] = useDeleteTaskMutation();
   const [updateTaskStatus] = useUpdateTaskStatusMutation();
-  const { data: adminTaskData, refetch: allTaskRefetch } = useGetAllTaskQuery(
+  const { data: adminTaskData, refetch: allTaskRefetch, isLoading:isTaskLoading } = useGetAllTaskQuery(
     { projectId: projectId ? projectId : null, companyId: user?.companyId },
     { skip: !user?.id || !user?.role || user?.role === "super_admin" || user?.role === "employee" },
   );
@@ -458,7 +458,42 @@ const Task: React.FC = () => {
                 </TableHeader>
 
                 <TableBody>
-                  {filteredTasks?.length ? (
+                  {
+                    isTaskLoading ? (
+    // Loading rows
+    Array.from({ length: 5 }).map((_, index) => (
+      <TableRow key={index} className="animate-pulse">
+        <TableCell className="w-10 px-2 md:px-4">
+          <div className="h-4 w-4 bg-gray-200 rounded" />
+        </TableCell>
+
+        <TableCell className="px-2 md:px-4">
+          <div className="h-4 w-24 md:w-40 bg-gray-200 rounded" />
+        </TableCell>
+
+        <TableCell className="hidden md:table-cell px-4">
+          <div className="h-4 w-28 bg-gray-200 rounded" />
+        </TableCell>
+
+        <TableCell className="px-2 md:px-4">
+          <div className="h-4 w-28 bg-gray-200 rounded" />
+        </TableCell>
+
+        <TableCell className="hidden md:table-cell px-4">
+          <div className="h-5 w-16 bg-gray-200 rounded-full" />
+        </TableCell>
+
+        <TableCell className="px-2 md:px-4">
+          <div className="h-5 w-20 bg-gray-200 rounded-full" />
+        </TableCell>
+
+        <TableCell className="text-right px-2 md:px-4">
+          <div className="h-7 w-7 bg-gray-200 rounded ml-auto" />
+        </TableCell>
+      </TableRow>
+    ))
+  ) :
+                  filteredTasks?.length ? (
                     filteredTasks?.map((task) => (
                       <TableRow
                         key={task?._id}
