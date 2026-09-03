@@ -15,9 +15,10 @@ const startServer = async () => {
         await connectDB(); 
         console.log("✅ Database connected successfully.");
 
-        server.listen(env.PORT, () => {
-            console.log(`🚀 Server is listening on PORT ${env.PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+        server.listen(env.PORT,'0.0.0.0', () => {
+        console.log(`🚀 Server is listening on PORT ${env.PORT}`);
         });
+        
     } catch (error) {
         console.error("❌ Failed to start server due to DB connection error:", error);
         process.exit(1);

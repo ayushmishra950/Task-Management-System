@@ -4,7 +4,6 @@ import { validate } from "../../middlewares/validate.middleware.ts";
 import {projectValidationSchema,updateProjectStatusValidationSchema,deleteProjectByIdValidationSchema, updateProjectValidationSchema, getProjectValidationSchema, getProjectByIdValidationSchema} from "../../schemas/project.schema.ts";
 import {authMiddleware} from "../../middlewares/auth.middleware.ts";
 import {accessAdminRoleOnly} from "../../middlewares/role.middleware.ts";
-import upload from "../../middlewares/upload.middleware.ts";
 
 const router = Router();
  
