@@ -65,7 +65,7 @@ app.use(cors({origin:[env.PRODUCTION_FRONTEND_URL], methods:["POST", "GET", "PUT
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const frontendPath = path.join(__dirname, "./build");
+const frontendPath = path.join(process.cwd(), "./build");
 
 app.use(express.static(frontendPath));
 
