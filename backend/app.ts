@@ -3,6 +3,8 @@ import env from "./config/env.ts";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import {errorHandler} from "./middlewares/error.middleware.ts";
+import path from "path";
+import { fileURLToPath } from "url";
 
 // SuperAdmin Routes
 import superAdminRoutes from "./routes/superAdmin/superAdmin.route.ts";
@@ -56,10 +58,35 @@ app.use(cors({origin:[env.PRODUCTION_FRONTEND_URL], methods:["POST", "GET", "PUT
    app.use("/api/session/token", sessionRefreshRoutes);
 
 
+// =========================
+// FRONTEND BUILD
+// =========================
 
-app.get("/",(req,res) => {
-   res.send({message:`Server is running on PORT- ${env?.PORT}`});
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const frontendPath = path.join(__dirname, "../build");
+
+app.use(express.static(frontendPath));
+
+
+// =========================
+// FRONTEND SPA FALLBACK
+// =========================
+
+// /api request agar kisi route se match nahi hui
+// to frontend index.html serve nahi karna hai.
+//
+// Baaki sab routes React frontend ko jayenge.
+
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith("/api")) {
+    return next();
+  }
+
+  res.sendFile(path.join(frontendPath, "index.html"));
 });
+
 
 
 app.use(errorHandler);

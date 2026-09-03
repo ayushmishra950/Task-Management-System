@@ -10,12 +10,3 @@ services:
     env_file:
       - ./backend/.env
     restart: unless-stopped
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: frontend
-    ports:
-      - "10000:10000"
-    restart: unless-stopped
