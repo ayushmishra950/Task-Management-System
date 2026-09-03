@@ -44,7 +44,7 @@ export const ExcelTaskForm = ({ isOpen, onClose, intialData}: IExcelTaskForm) =>
   // Get Managers
   // --------------------------------------------------
 
-  const { data: managerData, isLoading: managerLoading,} = useGetAllManagerQuery({ companyId: user?.companyId});
+  const { data: managerData, isLoading: managerLoading,} = useGetAllManagerQuery({ companyId: user?.companyId}, {skip:!user?.id || !user?.role});
       
   const managers = managerData?.data?.filter((manager) => manager?.role === "manager") || [];
 

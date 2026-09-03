@@ -32,9 +32,9 @@ import { socket } from "@/socket/socket";
 const TaskDashboard: React.FC = () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const { toast } = useToast();
-  const { data: summaryData, isLoading: isSummaryLoading, isError: isSummaryError, error: summaryError, refetch:dashboardSummaryRefetch } = useDashboardSummaryQuery();
+  const { data: summaryData, isLoading: isSummaryLoading, isError: isSummaryError, error: summaryError, refetch:dashboardSummaryRefetch } = useDashboardSummaryQuery(undefined, {skip:!user?.id || !user?.role});
   const dashboardSummary = summaryData?.data || {};
-  const { data, isLoading, isError, error, refetch:dashboardDataRefetch } = useDashboardDataQuery();
+  const { data, isLoading, isError, error, refetch:dashboardDataRefetch } = useDashboardDataQuery(undefined, {skip:!user?.id || !user?.role});
   const dashboardData = data?.data || {};
 
   const projects = dashboardData?.projects || [];

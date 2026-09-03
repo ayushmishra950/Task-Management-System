@@ -37,7 +37,7 @@ const ReassignedTask: React.FC = () => {
   const { toast } = useToast();
   const [search, setSearch] = useState<string>("");
   const [filterType, setFilterType] = useState<string>("all");
-  const { data, isLoading, isError, error, refetch:reassignedHistoryRefetch } = useReassignedHistoryQuery();
+  const { data, isLoading, isError, error, refetch:reassignedHistoryRefetch } = useReassignedHistoryQuery(undefined,{skip:!user?.id || !user?.role});
 
   const reassignedItems = data?.data || [];
 

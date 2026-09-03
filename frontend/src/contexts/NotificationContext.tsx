@@ -1,5 +1,6 @@
 
 import { createContext, useContext, useEffect, ReactNode, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { useGetAllNotificationQuery, useMarkAllNotificationsMutation } from "@/redux-toolkit/api/admin/notification.api";
 import { socket } from "@/socket/socket";
 
@@ -16,8 +17,17 @@ interface NotificationProviderProps {
 }
 
 export const NotificationProvider = ({ children}: NotificationProviderProps) => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  const { data: notificationData, refetch} = useGetAllNotificationQuery();
+  useLocation();
+  const user = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  })();
+  const { data: notificationData, refetch} = useGetAllNotificationQuery(undefined, {
+    skip: !user?.id || !user?.role,
+  });
   const [markAllNotifications] = useMarkAllNotificationsMutation();
   const notifications = notificationData?.data || [];
 

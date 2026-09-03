@@ -2,8 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route, Navigate, useNavigate, BrowserRouter } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { Routes, Route, Navigate, useNavigate, BrowserRouter } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import Login from "@/pages/Login";
 import AdminLogin from "@/pages/AdminLogin";
@@ -44,6 +43,7 @@ import LeadLayout from "@/lead-management/LeadLayout";
 import OrderList from "@/lead-management/OrderList";
 import LeadList from "@/lead-management/LeadList";
 import ProductList from "@/lead-management/ProductList";
+import { AuthProvider } from "./contexts/AuthContext";
 
 
 declare global {
@@ -61,6 +61,21 @@ const queryClient = new QueryClient({
   },
 });
 
+const hasStoredUser = () => {
+  try {
+    const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+    return Boolean(storedUser?.id && storedUser?.role);
+  } catch {
+    return false;
+  }
+};
+
+const PublicRoute = ({ children }: { children: React.ReactNode }) => children;
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => (
+  hasStoredUser() ? children : <Navigate to="/login" replace />
+);
+
 
 const AppRoutes = () => {
   const navigate = useNavigate();
@@ -68,12 +83,12 @@ const AppRoutes = () => {
   
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route path="/superAdmin/login" element={<SuperAdminLogin /> } />
-      <Route path="/" element={<Navigate to={"/dashboard"} replace />} />
+      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/admin/login" element={<PublicRoute><AdminLogin /></PublicRoute>} />
+      <Route path="/superAdmin/login" element={<PublicRoute><SuperAdminLogin /></PublicRoute>} />
+      <Route path="/" element={<Navigate to={hasStoredUser() ? "/tasks" : "/login"} replace />} />
 
-      <Route element={<MainLayout />}>
+      <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/user/:id" element={<EmployeeDashboard />} />
         <Route path="/users" element={<Users />} />
@@ -136,8 +151,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-         
-            <AppRoutes />
+          <AppRoutes />
         </TooltipProvider>
       </NotificationProvider>
     </AuthProvider>

@@ -33,9 +33,8 @@ const CompletedTask: React.FC = () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [search, setSearch] = useState<string>("");
   const [filterType, setFilterType] = useState("all");
-  const [filterName, setFilterName] = useState("");
 
-  const { data, isLoading, refetch:completeAssignmentRefetch } = useCompletedAssignmentQuery();
+  const { data, isLoading, refetch:completeAssignmentRefetch } = useCompletedAssignmentQuery(undefined,{skip:!user?.id || !user?.role});
   console.log("Completed Assignment Data:-", data);
   const completedItems = data?.data || [];
 

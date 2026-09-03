@@ -1,14 +1,3 @@
-// import { io, Socket } from "socket.io-client";
-
-// export const socket: Socket = io(import.meta.env.VITE_API_URL,{
-//     autoConnect:true,
-//     reconnection:true,
-//     withCredentials:true, 
-// });
-
-
-
-
 
 import { io, Socket } from "socket.io-client";
 
@@ -30,7 +19,7 @@ socket.on("disconnect", (reason) => {
   console.warn("🔴 Socket disconnected:", reason);
 
   // Client-side disconnect hua ho to manually reconnect
-  if (reason === "io client disconnect") {
+  if (reason === "io client disconnect" && localStorage.getItem("user")) {
     socket.connect();
   }
 });

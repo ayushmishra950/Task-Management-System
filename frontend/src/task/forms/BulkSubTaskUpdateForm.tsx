@@ -49,7 +49,7 @@ const BulkSubTaskUpdateForm: React.FC<BulkSubTaskUpdateFormProps> = ({
     const user = JSON.parse(localStorage.getItem("user"));
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollArrow, setShowScrollArrow] = useState(false);
-   const {data:employeeData, isLoading:employeeLoading} = useGetAllEmployeeQuery({companyId:user?.companyId});
+   const {data:employeeData, isLoading:employeeLoading} = useGetAllEmployeeQuery({companyId:user?.companyId}, {skip:!user?.id || !user?.role});
    const userList = employeeData?.data?.filter((e) => e?.role === "employee") || [];
   const [subTasks, setSubTasks] = useState<any[]>([]);
   const [confirmOpenDialog, setConfirmOpenDialog] = useState(false);

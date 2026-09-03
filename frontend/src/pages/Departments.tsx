@@ -41,7 +41,7 @@ const Departments: React.FC = () => {
   const [employeeListDialog, setEmployeeListDialog] = useState(false);
   const [pageLoading, setPageLoading] = useState(false);
   const [deleteDepartment,{isLoading:deleteLoading}] = useDeleteDepartmentMutation();
-  const {data, isLoading, error, isError} = useGetDepartmentQuery({companyId:user?.companyId});
+  const {data, isLoading, error, isError} = useGetDepartmentQuery({companyId:user?.companyId},{skip:!user?.id || !user?.role});
   const departmentList = data?.data || [];
 
   const employeeList = useAppSelector((state) => state.user.employees);

@@ -37,7 +37,7 @@ export const ExcelSubTaskForm = ({
     employeeId?: string;
     excelFile?: string;
   }>({});
-      const {data:employeeData, isLoading:employeeLoading} = useGetAllEmployeeQuery({companyId:user?.companyId});
+      const {data:employeeData, isLoading:employeeLoading} = useGetAllEmployeeQuery({companyId:user?.companyId}, {skip:!user?.id || !user?.role});
 
     const employees = employeeData?.data?.filter((e) => e?.role === "employee") || [];
 

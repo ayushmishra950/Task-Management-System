@@ -96,7 +96,9 @@ export const logoutEmployee = async (req: Request, res: Response, next: NextFunc
 
     if (!sessionId) return res.status(401).json({ success: false, message: "Unauthorized: No active session found." });
 
-    await Session.findByIdAndDelete(sessionId);
+   const deletedSession = await Session.findByIdAndDelete(sessionId);
+
+
 
     const isProduction = process.env.NODE_ENV === "production";
     

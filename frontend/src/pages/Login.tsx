@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types';
 import { Briefcase, User, Shield, Users, Loader } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,16 +10,16 @@ import { Eye, EyeOff } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { Helmet } from "react-helmet-async";
 import {useLoginEmployeeMutation} from "@/redux-toolkit/api/employee/auth.api";
+import { socket } from '@/socket/socket';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole>('employee');
   const [showPassword, setShowPassword] = useState(false);
-  const { login, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [loginEmployee, {isLoading}] = useLoginEmployeeMutation();
+  const [loginEmployee, {isLoading:loading}] = useLoginEmployeeMutation();
 
   const roles: { role: UserRole; label: string; icon: React.ElementType; color: string }[] = [
     { role: 'super_admin', label: 'Super Admin', icon: Shield, color: 'bg-primary' },
@@ -42,10 +41,11 @@ const Login: React.FC = () => {
     try {
       const res = await loginEmployee({email, password}).unwrap(); 
       localStorage.setItem("user", JSON.stringify(res.data.user));
-      toast({title:"Login Successfully.", description:res?.message})
+      toast({title:"Login Successfully.", description:res?.message});
+      if(!socket.connected) socket.connect();
       setEmail("");
       setPassword("")
-      navigate('/dashboard');                  
+      navigate('/tasks');                 
     } catch (error: any) {
       console.log(error)
       toast({

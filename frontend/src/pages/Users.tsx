@@ -50,8 +50,8 @@ const Users: React.FC = () => {
   const navigate = useNavigate();
   const [deleteAdmin, {isLoading:isDeleting}] = useDeleteAdminMutation();
   const [updateAdminStatus, {isLoading: updateStatusLoading}] = useUpdateAdminStatusMutation();
-  const {data:employeeData, isLoading:employeeLoading} = useGetAllEmployeeQuery({companyId:user?.companyId});
-  const {data, isLoading} = useGetAllAdminsQuery(undefined, {skip: user?.role !== "super_admin"});
+  const {data:employeeData, isLoading:employeeLoading} = useGetAllEmployeeQuery({companyId:user?.companyId},{skip:!user?.id || !user?.role});
+  const {data, isLoading} = useGetAllAdminsQuery(undefined, {skip: user?.role !== "super_admin" || !user?.id || !user?.role});
   const adminList = data?.data;
   const userList = employeeData?.data || [];
   const filteredUsers = userList.filter((u) => {

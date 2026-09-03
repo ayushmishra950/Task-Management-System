@@ -93,7 +93,7 @@ const Task: React.FC = () => {
   const [updateTaskStatus] = useUpdateTaskStatusMutation();
   const { data: adminTaskData, refetch: allTaskRefetch } = useGetAllTaskQuery(
     { projectId: projectId ? projectId : null, companyId: user?.companyId },
-    { skip: user?.role === "super_admin" || user?.role === "employee" },
+    { skip: !user?.id || !user?.role || user?.role === "super_admin" || user?.role === "employee" },
   );
   const taskList = adminTaskData?.data;
   const navigate = useNavigate();

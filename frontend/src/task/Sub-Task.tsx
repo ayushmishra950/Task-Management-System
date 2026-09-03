@@ -57,7 +57,7 @@ const SubTask: React.FC = () => {
   const { data: adminSubTaskData, error, refetch:subTaskRefetch } = useGetAllSubTaskQuery({
     taskId: taskId ? taskId : "",
     companyId: user?.companyId,
-  });
+  }, {skip:!user?.id || !user?.role});
   const subTaskList = adminSubTaskData?.data;
   const today = new Date();
 

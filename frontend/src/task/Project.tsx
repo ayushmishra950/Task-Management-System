@@ -98,7 +98,7 @@ const Project: React.FC = () => {
       skip:
         user?.role === "super_admin" ||
         user?.role === "manager" ||
-        user?.role === "employee",
+        user?.role === "employee" || !user?.id || !user?.role,
     },
   );
   const projects = data?.data || [];

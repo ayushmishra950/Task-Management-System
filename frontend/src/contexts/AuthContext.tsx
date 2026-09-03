@@ -30,7 +30,7 @@ import { getJobList } from '@/redux-toolkit/slice/job-portal/jobSlice';
 import { getRoles } from "@/redux-toolkit/slice/job-portal/roleSlice";
 import { getLoginUser } from "@/redux-toolkit/slice/allPage/loginUserSlice";
 import { socket } from "@/socket/socket";
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -52,16 +52,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const dispatch = useAppDispatch();
   const loginUserData = useAppSelector((state) => state?.loginUser?.loginUser);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (loginUserData) {
       setUser(loginUserData)
     }
     else {
-      let user = JSON.parse(localStorage.getItem("user"));
+      const user = JSON.parse(localStorage.getItem("user"));
       setUser(user)
     }
-  }, [loginUserData])
+  }, [loginUserData, location.pathname])
 
   useEffect(() => {
     socket.on("departmentRefresh", (department) => {
@@ -98,8 +99,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(null);
         dispatch(getLoginUser(null));
         localStorage.removeItem("user");
-        localStorage.removeItem("accessToken");
-
         window.location.href = "/login";
         return; // stop further processing
       }
@@ -121,8 +120,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(null);
         dispatch(getLoginUser(null));
         localStorage.removeItem("user");
-        localStorage.removeItem("accessToken");
-
         window.location.href = "/login";
         return; // stop further processing
       }
@@ -138,8 +135,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(null);
         dispatch(getLoginUser(null));
         localStorage.removeItem("user");
-        localStorage.removeItem("accessToken");
-
         window.location.href = "/login";
         return;
       }
@@ -209,7 +204,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           title: "Login Successfully.",
           description: `${res?.data?.message}`,
         });
-        localStorage.setItem('accessToken', res?.data?.accessToken);
         localStorage.setItem('user', JSON.stringify(res?.data?.user));
         // setUser(res?.data?.user);
         dispatch(getLoginUser(res?.data?.user))
@@ -249,7 +243,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       description: `Logout Successfully.`,
     });
     setUser(null);
-    localStorage.removeItem('accessToken');
     localStorage.removeItem('user');
     dispatch(getCompany([]));
     dispatch(getRecentActivities([]));

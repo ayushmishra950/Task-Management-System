@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { Helmet } from 'react-helmet-async';
 import {useLoginAdminMutation} from "@/redux-toolkit/api/admin/auth.api";
+import {socket} from "@/socket/socket";
 
 const AdminLogin: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -33,8 +34,9 @@ const AdminLogin: React.FC = () => {
                 title: "Login Successfully.",
                 description: `${res?.message}`,
               });
+              if(!socket.connected) socket.connect();
               localStorage.setItem('user', JSON.stringify(res?.data?.user));
-              navigate("/dashboard");
+              navigate("/tasks");
             } catch (error: any) {
       console.log(error);
       toast({

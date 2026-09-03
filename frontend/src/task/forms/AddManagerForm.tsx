@@ -50,13 +50,13 @@ const AddManagerForm = ({
 
     const { data } = useGetDepartmentQuery({
         companyId: user?.companyId,
-    });
+    }, {skip:!user?.id || !user?.role});
 
     const departmentList = data?.data || [];
 
     const { data: employeeData } = useGetAllEmployeeQuery({
         companyId: user?.companyId,
-    });
+    }, {skip:!user?.id || !user?.role});
 
     const employeeList = employeeData?.data || [];
 

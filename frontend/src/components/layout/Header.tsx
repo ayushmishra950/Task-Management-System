@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Bell, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
@@ -11,6 +11,10 @@ import type { LucideProps } from "lucide-react";
 import { useLogoutSuperAdminMutation, useGetSuperAdminQuery} from "@/redux-toolkit/api/superAdmin/auth.api";
 import { useGetEmployeeByIdQuery } from "@/redux-toolkit/api/employee/auth.api";
 import { useGetByIdAdminQuery } from "@/redux-toolkit/api/admin/auth.api";
+import DeleteCard from "../cards/DeleteCard";
+import {useLogoutEmployeeMutation} from "@/redux-toolkit/api/employee/auth.api";
+import {useLogoutAdminMutation} from "@/redux-toolkit/api/admin/auth.api";
+import { socket } from "@/socket/socket";
 
 interface HeaderProps {
   activeSidebar: string;
@@ -37,13 +41,18 @@ const Header: React.FC<HeaderProps> = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   const { unreadCount } = useNotifications();
+  const [logoutDialog, setLogoutDialog] = useState(false);
   const location = useLocation();
   const data = headingManage(location.pathname, userData?.role);
   const IconComponent = Icons[
     data?.icon as keyof typeof Icons
   ] as React.ComponentType<LucideProps>;
-  const [logoutSuperAdmin, { isLoading: logoutSuperAdminLoading }] =
-    useLogoutSuperAdminMutation();
+  const [logoutSuperAdmin,{ isLoading: logoutSuperAdminLoading }] = useLogoutSuperAdminMutation();
+  const [logoutAdmin,{ isLoading: logoutAdminLoading }] = useLogoutAdminMutation();
+  const [logoutEmployee,{ isLoading: logoutEmployeeLoading }] = useLogoutEmployeeMutation();
+
+  const loading = logoutSuperAdminLoading || logoutAdminLoading || logoutEmployeeLoading;
+
   const { data: superAdminData, isLoading } = useGetSuperAdminQuery(
     { id: userData?.id },
     { skip: userData?.role !== "super_admin" },
@@ -66,28 +75,72 @@ const Header: React.FC<HeaderProps> = ({
   );
   const user = superAdminData?.data || adminData?.data || employeeData?.data;
 
-  const handleLogout = async () => {
-    try {
-      const response = await logoutSuperAdmin().unwrap();
-      toast({
-        title: "Logout Successfully.",
-        description: response.data.message,
-      });
-      localStorage.clear();
-      navigate("/login");
-    } catch (error: any) {
-      console.log("Logout Failed.", error?.data?.message || error?.data?.error);
-      console.log("Logout Failed.", error);
-      toast({
-        title: "Logout Failed.",
-        description:
-          error?.data?.message || error?.data?.error || "Something Went Wrong.",
-        variant: "destructive",
-      });
+const handleLogout = async () => {
+  try {
+    const storedUser = localStorage.getItem("user");
+
+    if (!storedUser) {
+      navigate("/login", { replace: true });
+      return;
     }
-  };
+    let user;
+    try {
+      user = JSON.parse(storedUser);
+    } catch (parseError) {
+      console.warn("Invalid user data found in localStorage.");
+
+      localStorage.removeItem("user");
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    try {
+      let res;
+
+      switch (user?.role) {
+        case "super_admin":
+          res = await logoutSuperAdmin().unwrap();
+          break;
+
+        case "admin":
+          res = await logoutAdmin().unwrap();
+          break;
+
+        case "employee":
+        case "manager":
+          res = await logoutEmployee().unwrap();
+          break;
+
+        default:
+          console.warn("Unknown user role:", user?.role);
+          break;
+      }
+
+    } catch (apiError: any) {
+      console.warn("Logout API failed:", apiError?.data?.message || apiError?.data?.error || apiError?.message);
+    }
+  } finally {
+    localStorage.removeItem("user");
+    if(socket.connected) socket.disconnect();
+    navigate("/login", { replace: true });
+    toast({
+      title: "Logged out successfully.",
+      description: "You have been logged out of your account.",
+    });
+  }
+};
+
 
   return (
+    <>
+    <DeleteCard
+          isOpen={logoutDialog}
+          onClose={() => setLogoutDialog(false)}
+          onConfirm={handleLogout}
+          isDeleting={loading}
+          title="Logout Confirmation?"
+          message="Are you sure you want to log out of your account? You’ll need to log in again to access your account."
+        />
     <header className="sticky top-0 z-20 bg-card border-b border-border px-4 lg:px-6 py-3">
       <div className="flex items-start justify-between">
         <div className="flex items-start justify-start gap-4">
@@ -176,12 +229,12 @@ const Header: React.FC<HeaderProps> = ({
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
+              {/* <DropdownMenuItem
                 className="cursor-pointer"
                 onClick={() => navigate("/setting")}
               >
                 Profile
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
               <DropdownMenuItem
                 className="cursor-pointer"
                 onClick={() => navigate("/setting")}
@@ -191,7 +244,7 @@ const Header: React.FC<HeaderProps> = ({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive cursor-pointer"
-                onClick={handleLogout}
+                onClick={() =>{setLogoutDialog(true)}}
               >
                 Logout
               </DropdownMenuItem>
@@ -200,6 +253,7 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
     </header>
+    </>
   );
 };
 

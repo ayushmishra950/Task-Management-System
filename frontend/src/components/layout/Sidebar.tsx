@@ -10,6 +10,10 @@ import {useGetByIdAdminQuery} from "@/redux-toolkit/api/admin/auth.api";
 import { useToast } from '@/hooks/use-toast';
 import {useGetCompanyByIdQuery} from "@/redux-toolkit/api/superAdmin/company.api";
 import {useGetEmployeeByIdQuery} from "@/redux-toolkit/api/employee/auth.api";
+import DeleteCard from "../cards/DeleteCard";
+import {useLogoutEmployeeMutation} from "@/redux-toolkit/api/employee/auth.api";
+import {useLogoutAdminMutation} from "@/redux-toolkit/api/admin/auth.api";
+import { socket } from '@/socket/socket';
 
 const Sidebar: React.FC<SidebarProps> = ({ setTaskName, setJobName, isOpen, onToggle, setActiveSidebar, setTaskSubPage, setJobSubPage, setLeadSubPage, setLeadName }) => {
   const  userData  = JSON.parse(localStorage.getItem("user"));
@@ -19,7 +23,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setTaskName, setJobName, isOpen, onTo
   const sidebarRef = useRef<HTMLDivElement>(null);
   const jobDropdownRef = useRef<HTMLDivElement>(null);
   const leadDropdownRef = useRef<HTMLDivElement>(null);
-   
+    const [logoutDialog, setLogoutDialog] = useState(false);
   // Default sidebar open
   const [isLocalOpen, setLocalOpen] = useState<boolean>(isOpen);
 
@@ -33,7 +37,12 @@ const Sidebar: React.FC<SidebarProps> = ({ setTaskName, setJobName, isOpen, onTo
  const {data} = useGetCompanyByIdQuery({id:userData?.companyId}, {skip:!userData?.companyId});
      const company = data?.data;
   
-  const [logoutSuperAdmin, {isLoading:logoutSuperAdminLoading}] = useLogoutSuperAdminMutation();
+ const [logoutSuperAdmin,{ isLoading: logoutSuperAdminLoading }] = useLogoutSuperAdminMutation();
+   const [logoutAdmin,{ isLoading: logoutAdminLoading }] = useLogoutAdminMutation();
+   const [logoutEmployee,{ isLoading: logoutEmployeeLoading }] = useLogoutEmployeeMutation();
+ 
+   const loading = logoutSuperAdminLoading || logoutAdminLoading || logoutEmployeeLoading;
+
   const {data:superAdminData, isLoading:superAdminLoading, error:superAdminError} = useGetSuperAdminQuery({id:userData?.id}, {skip:!userData?.id || userData?.role !== "super_admin"});
     const {data:adminData, isLoading:adminLoading, error:adminError} = useGetByIdAdminQuery(
       {id:userData?.id, companyId:userData?.companyId},
@@ -46,25 +55,63 @@ const Sidebar: React.FC<SidebarProps> = ({ setTaskName, setJobName, isOpen, onTo
     );
 const user = superAdminData?.data || adminData?.data || employeeData?.data;
     
-   const handleLogout = async() => {
-    try{
-      // const response = await logoutSuperAdmin().unwrap();
-      //  toast({
-      //   title:"Logout Successfully.",
-      //   description:response.data.message,
-      //  });
-       localStorage.clear();
-       navigate("/login");
+
+const handleLogout = async () => {
+  try {
+    const storedUser = localStorage.getItem("user");
+
+    if (!storedUser) {
+      navigate("/login", { replace: true });
+      return;
     }
-    catch(error:any){
-       console.log("Logout Failed.", error?.data?.message || error?.data?.error);
-        toast({
-       title:"Logout Failed.",
-       description:error?.data?.message || error?.data?.error || "Something Went Wrong.",
-       variant:"destructive"
-        })
+    let user;
+    try {
+      user = JSON.parse(storedUser);
+    } catch (parseError) {
+      console.warn("Invalid user data found in localStorage.");
+
+      localStorage.removeItem("user");
+      navigate("/login", { replace: true });
+      return;
+    }
+
+    try {
+      let res;
+
+      switch (user?.role) {
+        case "super_admin":
+          res = await logoutSuperAdmin().unwrap();
+          break;
+
+        case "admin":
+          res = await logoutAdmin().unwrap();
+          break;
+
+        case "employee":
+        case "manager":
+          res = await logoutEmployee().unwrap();
+          break;
+
+        default:
+          console.warn("Unknown user role:", user?.role);
+          break;
       }
-   }
+
+    } catch (apiError: any) {
+      console.warn("Logout API failed:", apiError?.data?.message || apiError?.data?.error || apiError?.message);
+    }
+  } finally {
+    localStorage.removeItem("user");
+    // Phir socket disconnect karo
+  if (socket.connected) socket.disconnect();
+    navigate("/login", { replace: true });
+    toast({
+      title: "Logged out successfully.",
+      description: "You have been logged out of your account.",
+    });
+  }
+};
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const isMobile = window.innerWidth <= 768;
@@ -192,6 +239,15 @@ const effectiveRole = user?.role === "admin" ? "admin" :
 
   return (
     <>
+     <DeleteCard
+              isOpen={logoutDialog}
+              onClose={() => setLogoutDialog(false)}
+              onConfirm={handleLogout}
+              isDeleting={loading}
+              title="Logout Confirmation?"
+              message="Are you sure you want to log out of your account? You’ll need to log in again to access your account."
+            />
+
       <aside
         ref={sidebarRef}
         className={cn(
@@ -433,9 +489,9 @@ const effectiveRole = user?.role === "admin" ? "admin" :
         </nav>
 
         {/* Logout */}
-        <div className="p-4 border-t border-sidebar-border mt-auto" onClick={handleLogout}>
+        <div className="p-4 border-t border-sidebar-border mt-auto" onClick={() => {setLogoutDialog(true)}}>
           <button
-            onClick={handleLogout}
+            onClick={() => {setLogoutDialog(true)}}
             className={cn(
               "sidebar-item w-full flex items-center gap-3 text-destructive hover:bg-destructive/10",
               !isOpen && "justify-center"

@@ -44,7 +44,7 @@ const TaskManager = () => {
   const [deleteManager, {isLoading:isDeleting}] = useDeleteManagerMutation();
   const { data, refetch } = useGetAllManagerQuery({
     companyId: user?.companyId,
-  });
+  },{skip:!user?.id || !user?.role});
   const managers = data?.data || [];
 
   const [search, setSearch] = useState("");

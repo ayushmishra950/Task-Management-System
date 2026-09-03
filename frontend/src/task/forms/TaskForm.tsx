@@ -45,16 +45,16 @@ const TaskForm: React.FC<TaskFormModalProps> = ({
 
   const { data: managerData } = useGetAllManagerQuery({
     companyId: user?.companyId,
-  });
+  }, {skip:!user?.id || !user?.role});
   const managers = managerData?.data || [];
 
   const { data: projectData } = useGetAllProjectQuery(
     { companyId: user?.companyId },
-    { skip: user?.role === "super_admin" || user?.role === "employee" },
+    { skip: user?.role === "super_admin" || user?.role === "employee"|| !user?.id || !user?.role },
   ); 
   const projects = projectData?.data || [];
 
-  const {data:taskData} = useGetAllTaskQuery({companyId:user?.companyId, projectId:""})
+  const {data:taskData} = useGetAllTaskQuery({companyId:user?.companyId, projectId:""}, {skip:!user?.id || !user?.role})
 
   const handleScroll = () => {
     const el = formRef.current;

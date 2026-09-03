@@ -29,8 +29,8 @@ const ReassignForm: React.FC<ReassignFormModalProps> = ({ isOpen,reassignedType,
   const startDateRef = useRef(null);
   const endDateRef = useRef(null);
   const { toast } = useToast();
-    const {data:employeeData} = useGetAllEmployeeQuery({companyId:user?.companyId}, {skip: reassignName === "Manager" || reassignedType === "task"});
-  const { data:managerData } = useGetAllManagerQuery({ companyId: user?.companyId},{skip:reassignName === "Employee" || reassignedType === "subTask"});
+    const {data:employeeData} = useGetAllEmployeeQuery({companyId:user?.companyId}, {skip: reassignName === "Manager" || reassignedType === "task" || !user?.id || !user?.role});
+  const { data:managerData } = useGetAllManagerQuery({ companyId: user?.companyId},{skip:reassignName === "Employee" || reassignedType === "subTask" || !user?.id || !user?.role});
     const managers = managerData?.data || employeeData?.data;
   
 const filteredAssignees = managers?.filter((item) => {

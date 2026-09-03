@@ -58,7 +58,7 @@ const BulkTaskUpdateForm: React.FC<BulkTaskUpdateFormProps> = ({
 
   const { data: managerData } = useGetAllManagerQuery({
     companyId: user?.companyId,
-  });
+  },{skip:!user?.id || !user?.role});
 
   const managers = managerData?.data || [];
 
@@ -69,7 +69,7 @@ const BulkTaskUpdateForm: React.FC<BulkTaskUpdateFormProps> = ({
     {
       skip:
         user?.role === "super_admin" ||
-        user?.role === "employee",
+        user?.role === "employee" || !user?.id || !user?.role,
     }
   );
 

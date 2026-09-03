@@ -1,12 +1,26 @@
 
-import { fetchBaseQuery, BaseQueryFn, FetchArgs, FetchBaseQueryError} from "@reduxjs/toolkit/query/react";
+import { fetchBaseQuery, BaseQueryFn, FetchArgs, FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
 
 const baseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_URL,
   credentials: "include",
 });
 
-let refreshPromise: Promise<any> | null = null;
+let refreshPromise: Promise<unknown> | null = null;
+let isRedirecting = false;
+
+const redirectToLogin = () => {
+  if (isRedirecting) return;
+
+  isRedirecting = true;
+  localStorage.removeItem("user");
+
+  if (["/login", "/admin/login", "/superAdmin/login"].includes(window.location.pathname)) {
+    return;
+  }
+
+  window.location.replace("/login");
+};
 
 export const baseQueryWithReauth: BaseQueryFn<
   string | FetchArgs,
@@ -14,7 +28,7 @@ export const baseQueryWithReauth: BaseQueryFn<
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
 
-  let result = await baseQuery(args,api,extraOptions);
+  const result = await baseQuery(args, api, extraOptions);
 
   if (result.error?.status !== 401) {
     return result;
@@ -23,9 +37,12 @@ export const baseQueryWithReauth: BaseQueryFn<
   const requestUrl = typeof args === "string" ? args : args.url;
 
   if (
-    requestUrl ==="/api/session/token/refresh-token"
+    requestUrl === "/api/session/token/refresh-token" ||
+    requestUrl.includes("/auth/login")
   ) {
-    window.location.href = "/login";
+    if (requestUrl === "/api/session/token/refresh-token") {
+      redirectToLogin();
+    }
     return result;
   }
 
@@ -34,7 +51,7 @@ export const baseQueryWithReauth: BaseQueryFn<
       await refreshPromise;
       return await baseQuery(args,api,extraOptions);
     } catch {
-      window.location.href = "/login";
+      redirectToLogin();
       return result;
     }
   }
@@ -46,21 +63,19 @@ export const baseQueryWithReauth: BaseQueryFn<
         method: "POST",
       },
       api,
-      extraOptions));
+      extraOptions
+    )
+  ).then((refreshResult) => {
+    if (refreshResult.error) {
+      throw refreshResult.error;
+    }
+  });
 
   try {
-    const refreshResult = await refreshPromise;
-
-    if (refreshResult.error) {
-      window.location.href = "/login";
-      return result;
-    }
-
-    result = await baseQuery(
-      args,
-      api,
-      extraOptions
-    );
+    await refreshPromise;
+    return await baseQuery(args, api, extraOptions);
+  } catch {
+    redirectToLogin();
     return result;
   } finally {
     refreshPromise = null;

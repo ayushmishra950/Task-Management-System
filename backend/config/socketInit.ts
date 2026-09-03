@@ -111,7 +111,13 @@ export const initSocket = (server:HttpServer) => {
 
 
       socket.on("disconnect",(reason:string) => {
-        activeUsers.delete(userIdStr);
+        const activeUser = activeUsers.get(userIdStr);
+
+        // Sirf current socket hi active hai to remove karo
+        if (activeUser?.socketId === socket.id) {
+         activeUsers.delete(userIdStr);
+        }
+
        console.log(`🔌 Client disconnected: ${userIdStr} due to ${reason}`);
       })
    })

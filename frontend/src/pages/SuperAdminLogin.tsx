@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { Helmet } from 'react-helmet-async';
 import {useLoginSuperAdminMutation} from "@/redux-toolkit/api/superAdmin/auth.api";
+import { socket } from '@/socket/socket';
 
 const SuperAdminLogin: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -30,11 +31,12 @@ const SuperAdminLogin: React.FC = () => {
     try {
       const res = await loginSuperAdmin({email, password}).unwrap(); // Admin role hardcoded
          localStorage.setItem("user", JSON.stringify(res.data.user));
+         if(!socket.connected) socket.connect();
               toast({
                 title: "Login Successfully.",
                 description: `${res?.message}`,
               });
-            navigate("/dashboard");
+            navigate("/companies");
 
     } catch (error: any) {
       console.log(error);

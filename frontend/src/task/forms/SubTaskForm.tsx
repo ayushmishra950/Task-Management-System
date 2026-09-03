@@ -39,8 +39,8 @@ const SubTaskForm: React.FC<SubTaskFormModalProps> = ({
   
   const loading = createLoading || updateLoading;
 
-    const {data:employeeData, isLoading:employeeLoading, error:employeeError} = useGetAllEmployeeQuery({companyId:user?.companyId});
-   const {data:taskData, error} = useGetAllTaskQuery({projectId:"", companyId:user?.companyId}, {skip:user?.role === "super_admin"});
+    const {data:employeeData, isLoading:employeeLoading, error:employeeError} = useGetAllEmployeeQuery({companyId:user?.companyId}, {skip:!user?.id || !user?.role});
+   const {data:taskData, error} = useGetAllTaskQuery({projectId:"", companyId:user?.companyId}, {skip:user?.role === "super_admin" || !user?.id || !user?.role});
    const taskList = taskData?.data ?? [];
  
    const isAdmin = user?.role === "admin";
