@@ -140,6 +140,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, initialData = 
                   value={formData.clientCompanyName}
                   onChange={(e) => handleChange("clientCompanyName", e.target.value)}
                   disabled={loading}
+                  placeholder="Enter Client name"
                 />
               </div>
             </div>
@@ -147,12 +148,12 @@ const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, initialData = 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email *</Label>
-                <Input id="email" type="email" value={formData.email} onChange={(e) => handleChange("email", e.target.value)} disabled={loading} />
+                <Input id="email" type="email" value={formData.email} placeholder="Enter client email" onChange={(e) => handleChange("email", e.target.value)} disabled={loading} />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="contact">Contact *</Label>
-                <Input id="contact" value={formData.contact} onChange={(e) => handleChange("contact", e.target.value)} disabled={loading} />
+                <Input id="contact" value={formData.contact} placeholder="Enter client contact" onChange={(e) => handleChange("contact", e.target.value)} disabled={loading} />
               </div>
             </div>
 
@@ -183,19 +184,19 @@ const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, initialData = 
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="designation">Designation</Label>
-                <Input id="designation" value={formData.designation} onChange={(e) => handleChange("designation", e.target.value)} disabled={loading} />
+                <Label htmlFor="designation">Designation (Optional)</Label>
+                <Input id="designation" value={formData.designation} placeholder="Enter client desination" onChange={(e) => handleChange("designation", e.target.value)} disabled={loading} />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Input id="address" value={formData.address} onChange={(e) => handleChange("address", e.target.value)} disabled={loading} />
+                <Label htmlFor="address">Address (Optional)</Label>
+                <Input id="address" value={formData.address} placeholder="Enter client address" onChange={(e) => handleChange("address", e.target.value)} disabled={loading} />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="remarks">Remarks</Label>
-              <Textarea id="remarks" rows={3} value={formData.remarks} onChange={(e) => handleChange("remarks", e.target.value)} disabled={loading} />
+              <Label htmlFor="remarks">Remarks (Optional)</Label>
+              <Textarea id="remarks" rows={3} value={formData.remarks} placeholder="Enter remarks" onChange={(e) => handleChange("remarks", e.target.value)} disabled={loading} />
             </div>
           </div>
 
