@@ -130,7 +130,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, initialData = 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="fullName">Full Name *</Label>
-                <Input id="fullName" value={formData.fullName} onChange={(e) => handleChange("fullName", e.target.value)} disabled={loading} />
+                <Input id="fullName" value={formData.fullName} placeholder="Enter Client name" onChange={(e) => handleChange("fullName", e.target.value)} disabled={loading} />
               </div>
 
               <div className="space-y-2">
@@ -140,7 +140,7 @@ const ClientForm: React.FC<ClientFormProps> = ({ isOpen, onClose, initialData = 
                   value={formData.clientCompanyName}
                   onChange={(e) => handleChange("clientCompanyName", e.target.value)}
                   disabled={loading}
-                  placeholder="Enter Client name"
+                  placeholder="Enter Client Company name"
                 />
               </div>
             </div>
