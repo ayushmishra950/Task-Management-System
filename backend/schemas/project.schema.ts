@@ -51,6 +51,14 @@ export const projectValidationSchema = z.object({
 
   remarks: z.string().optional(),
 
+  // Admin project ko kisi client se link kar sakta hai; null bhejne par link hat jata hai
+  clientId: z
+    .union([
+      z.string().regex(/^[0-9a-fA-F]{24}$/, { message: "Invalid Client ID format" }),
+      z.null(),
+    ])
+    .optional(),
+
   createdBy: z
     .string({
       message: "CreatedBy ID is required",

@@ -23,7 +23,7 @@ const sessionSchema = new mongoose.Schema<ISession>({
     ipAddress:{type:String},
     expiresAt:{type:Date, required:true},
     companyId:{type:mongoose.Schema.Types.ObjectId, ref:"Company",default: null, required: function(){ return this.role !== "super_admin"}},
-    role:{type:String, enum:["super_admin","admin", "employee", "manager" ], required:true},
+    role:{type:String, enum:["super_admin","admin", "employee", "manager", "client" ], required:true},
 },{timestamps:true});
 
 sessionSchema.index({expiresAt:1}, {expireAfterSeconds:0})

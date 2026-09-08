@@ -48,8 +48,16 @@ import {admin_SubTask_Api} from "../api/admin/subTask.api";
 import {admin_Notification_Api} from "../api/admin/notification.api";
 
 
+import {admin_Client_Api} from "../api/admin/client.api";
+import {admin_ClientRequest_Api} from "../api/admin/clientRequest.api";
+
+
 // Employee Api
 import {employee_Auth_Api} from "../api/employee/auth.api";
+
+// Client Api
+import {client_Auth_Api} from "../api/client/auth.api";
+import {client_Request_Api} from "../api/client/clientRequest.api";
 
 export const store = configureStore({
     reducer: {
@@ -100,7 +108,11 @@ export const store = configureStore({
         [admin_Task_Api.reducerPath]:admin_Task_Api.reducer,
         [admin_SubTask_Api.reducerPath]:admin_SubTask_Api.reducer,
         [admin_Notification_Api.reducerPath]:admin_Notification_Api.reducer,
+        [admin_Client_Api.reducerPath]:admin_Client_Api.reducer,
+        [admin_ClientRequest_Api.reducerPath]:admin_ClientRequest_Api.reducer,
         [employee_Auth_Api.reducerPath]: employee_Auth_Api.reducer,
+        [client_Auth_Api.reducerPath]: client_Auth_Api.reducer,
+        [client_Request_Api.reducerPath]: client_Request_Api.reducer,
     
     },
 
@@ -119,7 +131,13 @@ export const store = configureStore({
             admin_SubTask_Api.middleware,
             admin_Notification_Api.middleware,
 
+            admin_Client_Api.middleware,
+            admin_ClientRequest_Api.middleware,
+
             employee_Auth_Api.middleware,
+
+            client_Auth_Api.middleware,
+            client_Request_Api.middleware,
         
         )
     )

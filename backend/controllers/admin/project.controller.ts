@@ -4,6 +4,7 @@ import {projectValidationSchema,deleteProjectByIdValidationSchema,updateProjectS
 import {z} from "zod";
 import {reassignmentHistory, completedStatusAssignment, getProjectByIdData,handleGetDashboardSummary, handleGetDashboardData} from "../../services/project.service.ts";
 import {handleDeleteProject} from "../../services/project.service.ts";
+import {notifyClientOfProjectAssignment, emitClientProjectChanged} from "../../sockets/project.socket.ts";
 
 type ProjectSchemaInput = z.infer<typeof projectValidationSchema>["body"];
 type UpdateProjectSchemaInput = z.infer<typeof updateProjectValidationSchema>["body"];
@@ -18,10 +19,12 @@ type UpdateProjectStatusParams = z.infer<typeof updateProjectStatusValidationSch
 
 export const createProject = async(req:Request<{}, {}, ProjectSchemaInput>, res:Response, next:NextFunction) => {
     try{
-         const {description, endDate,remarks, ...restBody} = req.body;
-         const projectData = {...restBody, ...description && {description}, ...endDate && {endDate}, ...remarks && {remarks}};
+         const {description, endDate,remarks, clientId, ...restBody} = req.body;
+         const projectData = {...restBody, ...description && {description}, ...endDate && {endDate}, ...remarks && {remarks}, ...clientId && {clientId}};
           const project = await Project.create(projectData);
           if(!project)return res.status(404).json({success:false, message:"Project Create Failed."});
+
+          if(clientId) await notifyClientOfProjectAssignment({user:req.user, project, clientId, action:"assigned"});
 
           res.status(201).json({success:true, data:project, message:"Project created successfully."})
     }
@@ -35,7 +38,7 @@ export const createProject = async(req:Request<{}, {}, ProjectSchemaInput>, res:
 
 export const getProject = async(req:Request<GetProjectSchemaParams, {}, {}>, res:Response, next:NextFunction) => {
     try{
-          const project = await Project.find({companyId:req.params.companyId});
+          const project = await Project.find({companyId:req.params.companyId}).populate("clientId", "fullName email clientCompanyName");
 
           res.status(200).json({success:true, data:project})
     }
@@ -78,8 +81,25 @@ export const deleteProject = async(req:Request<DeleteProjectByIdSchemaParams, {}
 
 export const updateProject = async(req:Request<UpdateProjectSchemaParams, {}, UpdateProjectSchemaInput>, res:Response, next:NextFunction) => {
     try{
+          const existingProject = await Project.findOne({_id:req.params.id, companyId:req.params.companyId});
+          if(!existingProject)return res.status(404).json({success:false, message:"Project Not Found."});
+
+          const previousClientId = existingProject.clientId?.toString() || null;
+
           const project = await Project.findOneAndUpdate({_id:req.params.id, companyId:req.params.companyId}, {$set:req.body}, {new:true, runValidators:true});
           if(!project)return res.status(404).json({success:false, message:"Project Not Found."});
+
+          const currentClientId = project.clientId?.toString() || null;
+
+          if(currentClientId !== previousClientId){
+            // Naya client juda to use batao, purane client se hata to use bhi batao
+            if(currentClientId) await notifyClientOfProjectAssignment({user:req.user, project, clientId:currentClientId, action:"assigned"});
+            if(previousClientId) await notifyClientOfProjectAssignment({user:req.user, project, clientId:previousClientId, action:"unassigned"});
+          }
+          else if(currentClientId){
+            // Sirf project ka data badla hai, client ki list chup-chaap refresh ho jaye
+            emitClientProjectChanged({clientIds:[currentClientId], action:"updated", projectId:project._id});
+          }
 
           res.status(200).json({success:true, message:"Project updated successfully."})
     }
@@ -95,6 +115,8 @@ export const updateProjectStatus = async(req:Request<UpdateProjectStatusParams, 
 try {
       const subTask = await Project.findOneAndUpdate({_id:req.params.id, companyId:req.params.companyId}, {$set:{status:req.body.status}},{new:true, runValidators:true});
       if(!subTask) return res.status(404).json({success:false, message:"Sub Task Not Found."});
+
+      if(subTask.clientId) emitClientProjectChanged({clientIds:[subTask.clientId], action:"status_updated", projectId:subTask._id});
 
       res.status(200).json({success:true, message:"Project Status Update Successfully.", data:subTask})
 }

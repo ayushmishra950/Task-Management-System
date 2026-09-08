@@ -13,13 +13,22 @@ const redirectToLogin = () => {
   if (isRedirecting) return;
 
   isRedirecting = true;
+
+  // Role pehle padho, tabhi pata chalega client ko kahan bhejna hai
+  let role: string | undefined;
+  try {
+    role = JSON.parse(localStorage.getItem("user") || "null")?.role;
+  } catch {
+    role = undefined;
+  }
+
   localStorage.removeItem("user");
 
-  if (["/login", "/admin/login", "/superAdmin/login"].includes(window.location.pathname)) {
+  if (["/login", "/admin/login", "/superAdmin/login", "/client/login"].includes(window.location.pathname)) {
     return;
   }
 
-  window.location.replace("/login");
+  window.location.replace(role === "client" ? "/client/login" : "/login");
 };
 
 export const baseQueryWithReauth: BaseQueryFn<

@@ -20,9 +20,16 @@ import adminProjectRoutes from "./routes/admin/project.route.ts";
 import adminTaskRoutes from "./routes/admin/task.route.ts";
 import adminSubTaskRoutes from "./routes/admin/subTask.route.ts";
 import adminNotificationRoutes from "./routes/admin/notification.route.ts";
+import adminClientRoutes from "./routes/admin/client.route.ts";
+import adminClientRequestRoutes from "./routes/admin/clientRequest.route.ts";
 
 //Employee Routes
 import employeeAuthRoutes from "./routes/employee/employee.route.ts";
+
+
+// Client Routes
+import clientAuthRoutes from "./routes/client/client.route.ts";
+import clientRequestRoutes from "./routes/client/clientRequest.route.ts";
 
 
 // Refresh Token Routes
@@ -50,9 +57,14 @@ app.use(cors({origin:[env.PRODUCTION_FRONTEND_URL], methods:["POST", "GET", "PUT
    app.use("/api/admin/task", adminTaskRoutes);
    app.use("/api/admin/subTask", adminSubTaskRoutes);
    app.use("/api/admin/notification", adminNotificationRoutes);
+   app.use("/api/admin/client", adminClientRoutes);
+   app.use("/api/admin/clientRequest", adminClientRequestRoutes);
 
    
    app.use("/api/employee/auth", employeeAuthRoutes);
+
+   app.use("/api/client/auth", clientAuthRoutes);
+   app.use("/api/client/request", clientRequestRoutes);
    
    app.use("/api/session/token", sessionRefreshRoutes);
 

@@ -44,6 +44,13 @@ import OrderList from "@/lead-management/OrderList";
 import LeadList from "@/lead-management/LeadList";
 import ProductList from "@/lead-management/ProductList";
 import { AuthProvider } from "./contexts/AuthContext";
+import ClientLogin from "@/pages/ClientLogin";
+import ClientLayout from "@/client-portal/ClientLayout";
+import ClientDashboard from "@/client-portal/Client-Dashboard";
+import ClientRequests from "@/client-portal/Client-Requests";
+import ClientProjects from "@/client-portal/Client-Projects";
+import Clients from "@/task/Clients";
+import AdminClientRequests from "@/task/Client-Requests";
 
 
 declare global {
@@ -61,19 +68,38 @@ const queryClient = new QueryClient({
   },
 });
 
-const hasStoredUser = () => {
+const getStoredUser = () => {
   try {
-    const storedUser = JSON.parse(localStorage.getItem("user") || "null");
-    return Boolean(storedUser?.id && storedUser?.role);
+    return JSON.parse(localStorage.getItem("user") || "null");
   } catch {
-    return false;
+    return null;
   }
 };
+
+const hasStoredUser = () => {
+  const storedUser = getStoredUser();
+  return Boolean(storedUser?.id && storedUser?.role);
+};
+
+/** Client ka home /client hai, baaki sabka /tasks. */
+const getHomePath = () => {
+  const storedUser = getStoredUser();
+
+  if (!storedUser?.id || !storedUser?.role) return "/login";
+
+  return storedUser.role === "client" ? "/client" : "/tasks";
+};
+
+const getLoginPath = () => (getStoredUser()?.role === "client" ? "/client/login" : "/login");
+
+const ClientRoute = ({ children }: { children: React.ReactNode }) => (
+  getStoredUser()?.role === "client" ? children : <Navigate to={getHomePath()} replace />
+);
 
 const PublicRoute = ({ children }: { children: React.ReactNode }) => children;
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => (
-  hasStoredUser() ? children : <Navigate to="/login" replace />
+  hasStoredUser() ? children : <Navigate to={getLoginPath()} replace />
 );
 
 
@@ -86,7 +112,8 @@ const AppRoutes = () => {
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/admin/login" element={<PublicRoute><AdminLogin /></PublicRoute>} />
       <Route path="/superAdmin/login" element={<PublicRoute><SuperAdminLogin /></PublicRoute>} />
-      <Route path="/" element={<Navigate to={hasStoredUser() ? "/tasks" : "/login"} replace />} />
+      <Route path="/client/login" element={<PublicRoute><ClientLogin /></PublicRoute>} />
+      <Route path="/" element={<Navigate to={getHomePath()} replace />} />
 
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
         <Route path="/dashboard" element={<Dashboard />} />
@@ -114,6 +141,16 @@ const AppRoutes = () => {
           <Route path="completed-task" element={<CompletedTask />} />
           <Route path="reassigned-task" element={<ReassignedTask />} />
           <Route path="manager" element={<TaskManager />} />
+          <Route path="clients" element={<Clients />} />
+          <Route path="client-requests" element={<AdminClientRequests />} />
+        </Route>
+
+
+        {/* Client Portal Routes */}
+        <Route path="/client" element={<ClientRoute><ClientLayout /></ClientRoute>}>
+          <Route index element={<ClientDashboard />} />
+          <Route path="requests" element={<ClientRequests />} />
+          <Route path="projects" element={<ClientProjects />} />
         </Route>
 
 

@@ -4,7 +4,7 @@ import SubTaskAssignmentHistory from "../models/subTask.history.model.ts";
 import Task from "../models/task.model.ts";
 import SubTask from "../models/subTask.model.ts";
 import mongoose from "mongoose";
-import {deleteProjectSocket} from "../sockets/project.socket.ts";
+import {deleteProjectSocket, emitClientProjectChanged} from "../sockets/project.socket.ts";
 
 
 export const handleDeleteProject = async ({user,projectIds,companyId}: {user:any;projectIds: string[];companyId: string}) => {
@@ -12,7 +12,7 @@ export const handleDeleteProject = async ({user,projectIds,companyId}: {user:any
   try {
     session.startTransaction();
     
-    const projects = await Project.find({_id: { $in: projectIds },companyId}).select("_id").session(session);
+    const projects = await Project.find({_id: { $in: projectIds },companyId}).select("_id clientId").session(session);
 
     if (!projects.length) {
       await session.abortTransaction();
@@ -49,6 +49,9 @@ export const handleDeleteProject = async ({user,projectIds,companyId}: {user:any
       await deleteProjectSocket({ user, tasks, subTasks});
     }
 
+    // Jin clients ke project delete hue unki list turant refresh ho jaye
+    emitClientProjectChanged({clientIds: projects.map((project: any) => project.clientId), action: "deleted"});
+
     return {success: true,message: "Projects, tasks and subtasks deleted successfully.",data: {deletedProjects: projectDeleteResult.deletedCount,deletedTasks: taskDeleteResult.deletedCount,deletedSubTasks}};
 
   } catch (error: any) {
@@ -74,7 +77,8 @@ export const getProjectByIdData = async ({ projectId, companyId}: any) => {
 
   
     const project = await Project.findOne({ _id: projectId, companyId: companyId})
-      .populate({ path: "createdBy", select: "fullName email profileImage"}).lean();
+      .populate({ path: "createdBy", select: "fullName email profileImage"})
+      .populate({ path: "clientId", select: "fullName email contact clientCompanyName"}).lean();
 
     if (!project) return {success: false,message: "Project not found."};
 

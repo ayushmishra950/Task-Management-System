@@ -67,6 +67,7 @@ interface ProjectItem {
   endDate: string;
   startDate: string;
   priority: Priority;
+  clientId?: any;
 }
 
 const Project: React.FC = () => {
@@ -361,6 +362,9 @@ const Project: React.FC = () => {
                       />
                     </TableHead>
                     <TableHead className="px-2 md:px-4">Project</TableHead>
+                    <TableHead className="hidden lg:table-cell px-4">
+                      Client
+                    </TableHead>
                     <TableHead className="hidden md:table-cell px-4">
                       Start Day
                     </TableHead>
@@ -376,7 +380,8 @@ const Project: React.FC = () => {
                 </TableHeader>
 
                 <TableBody>
-                  {isProjectsLoading ? (
+                  {
+                  isProjectsLoading ? (
     // Loading rows
     Array.from({ length: 5 }).map((_, index) => (
       <TableRow key={index} className="animate-pulse">
@@ -386,6 +391,10 @@ const Project: React.FC = () => {
 
         <TableCell className="px-2 md:px-4">
           <div className="h-4 w-24 md:w-40 bg-gray-200 rounded" />
+        </TableCell>
+
+        <TableCell className="hidden lg:table-cell px-4">
+          <div className="h-4 w-24 bg-gray-200 rounded" />
         </TableCell>
 
         <TableCell className="hidden md:table-cell px-4">
@@ -432,6 +441,21 @@ const Project: React.FC = () => {
                         </TableCell>
                         <TableCell className="font-medium px-2 md:px-4 truncate max-w-[100px] md:max-w-none">
                           {project.name}
+                        </TableCell>
+
+                        <TableCell className="hidden lg:table-cell px-4">
+                          {project.clientId ? (
+                            <span className="whitespace-nowrap">
+                              {project.clientId.fullName}
+                              {project.clientId.clientCompanyName && (
+                                <span className="block text-[10px] text-muted-foreground">
+                                  {project.clientId.clientCompanyName}
+                                </span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
                         </TableCell>
 
                         <TableCell className="hidden md:table-cell px-4">
@@ -552,7 +576,7 @@ const Project: React.FC = () => {
                   ) : (
                     <TableRow>
                       <TableCell
-                        colSpan={5}
+                        colSpan={8}
                         className="text-center h-20 text-sm"
                       >
                         No projects found

@@ -226,6 +226,24 @@ if (isError) {
                 </Card>
               </div>
 
+              {/* Linked Client */}
+              {project?.clientId && (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Client</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-lg font-semibold">
+                      {project.clientId.fullName}
+                      {project.clientId.clientCompanyName ? ` · ${project.clientId.clientCompanyName}` : ""}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {[project.clientId.email, project.clientId.contact].filter(Boolean).join(" · ")}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Summary Stats */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Card>

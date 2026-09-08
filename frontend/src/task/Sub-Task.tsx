@@ -441,7 +441,7 @@ const SubTask: React.FC = () => {
         </TableCell>
       </TableRow>
     ))
-  ) :
+  ) : 
                   filteredSubTasks?.length > 0 ? (
                     filteredSubTasks?.map((subTask) => (
                       <TableRow

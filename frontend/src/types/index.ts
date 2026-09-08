@@ -1,4 +1,4 @@
-export type UserRole = 'super_admin' | 'admin' | 'employee';
+export type UserRole = 'super_admin' | 'admin' | 'employee' | 'manager' | 'client';
 
 interface CompanyDetail {
   _id: string;
@@ -226,6 +226,7 @@ export interface ProjectFormData {
   remarks?: string;
   status?: string;
   url?:string;
+  clientId?: any;
 }
 
 export interface ProjectFormProps {

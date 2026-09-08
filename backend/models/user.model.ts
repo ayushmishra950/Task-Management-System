@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import type {employeeTypes, employeeStatusTypes} from "../types/global.ts";
 import bcrypt from "bcrypt";
     
- type Role = "admin" | "employee" | "manager";
+ type Role = "admin" | "employee" | "manager" | "client";
 
 interface IUser {
     fullName:string,
@@ -33,6 +33,7 @@ interface IUser {
     createdAt:Date,
     updatedAt:Date,
     managedDepartments?:mongoose.Types.ObjectId[],
+    clientCompanyName?:string,
     active:boolean,
 };
 
@@ -53,10 +54,11 @@ interface IUser {
     lpa:{type:String},
     ifscCode:{type:String},
     remarks:{type:String},
-    role:{type:String, enum:["admin", "employee", "manager"], required:true},
+    role:{type:String, enum:["admin", "employee", "manager", "client"], required:true},
     companyId:{type:mongoose.Schema.Types.ObjectId, ref:"Company", required:true},
     createdBy:{type:mongoose.Schema.Types.ObjectId, required:true},
     managedDepartments:[{type:mongoose.Schema.Types.ObjectId, ref:"Department"}],
+    clientCompanyName:{type:String},
     active:{type:Boolean, default:false},
     status:{type:String, enum:["ACTIVE", "RELIEVED", "ON_HOLD"], default:"ACTIVE"}
     

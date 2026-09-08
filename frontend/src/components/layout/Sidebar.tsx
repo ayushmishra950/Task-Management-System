@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { LogOut, Menu, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SidebarProps, navItems, taskSubMenu, JobSubMenu, LeadSubMenu } from "@/services/allFunctions";
+import { SidebarProps, navItems, taskSubMenu, JobSubMenu, LeadSubMenu, ClientSubMenu } from "@/services/allFunctions";
 import { createPortal } from 'react-dom';
 import {useLogoutSuperAdminMutation, useGetSuperAdminQuery} from "@/redux-toolkit/api/superAdmin/auth.api";
 import {useGetByIdAdminQuery} from "@/redux-toolkit/api/admin/auth.api";
@@ -13,6 +13,7 @@ import {useGetEmployeeByIdQuery} from "@/redux-toolkit/api/employee/auth.api";
 import DeleteCard from "../cards/DeleteCard";
 import {useLogoutEmployeeMutation} from "@/redux-toolkit/api/employee/auth.api";
 import {useLogoutAdminMutation} from "@/redux-toolkit/api/admin/auth.api";
+import {useLogoutClientMutation, useGetClientProfileByIdQuery} from "@/redux-toolkit/api/client/auth.api";
 import { socket } from '@/socket/socket';
 
 const Sidebar: React.FC<SidebarProps> = ({ setTaskName, setJobName, isOpen, onToggle, setActiveSidebar, setTaskSubPage, setJobSubPage, setLeadSubPage, setLeadName }) => {
@@ -31,17 +32,20 @@ const Sidebar: React.FC<SidebarProps> = ({ setTaskName, setJobName, isOpen, onTo
   const [showTaskSubMenu, setShowTaskSubMenu] = useState(false);
   const [showJobSubMenu, setShowJobSubMenu] = useState(false);
   const [showLeadSubMenu, setShowLeadSubMenu] = useState(false);
+  const [showClientSubMenu, setShowClientSubMenu] = useState(false);
   const [dropdownPos, setDropdownPos] = useState<{ top: number, left: number }>({ top: 0, left: 0 });
   const [jobDropdownPos, setJobDropdownPos] = useState<{ top: number, left: number }>({ top: 0, left: 0 });
   const [leadDropdownPos, setLeadDropdownPos] = useState<{ top: number, left: number }>({ top: 0, left: 0 });
+  const [clientDropdownPos, setClientDropdownPos] = useState<{ top: number, left: number }>({ top: 0, left: 0 });
  const {data} = useGetCompanyByIdQuery({id:userData?.companyId}, {skip:!userData?.companyId});
      const company = data?.data;
   
  const [logoutSuperAdmin,{ isLoading: logoutSuperAdminLoading }] = useLogoutSuperAdminMutation();
    const [logoutAdmin,{ isLoading: logoutAdminLoading }] = useLogoutAdminMutation();
    const [logoutEmployee,{ isLoading: logoutEmployeeLoading }] = useLogoutEmployeeMutation();
+   const [logoutClient,{ isLoading: logoutClientLoading }] = useLogoutClientMutation();
  
-   const loading = logoutSuperAdminLoading || logoutAdminLoading || logoutEmployeeLoading;
+   const loading = logoutSuperAdminLoading || logoutAdminLoading || logoutEmployeeLoading || logoutClientLoading;
 
   const {data:superAdminData, isLoading:superAdminLoading, error:superAdminError} = useGetSuperAdminQuery({id:userData?.id}, {skip:!userData?.id || userData?.role !== "super_admin"});
     const {data:adminData, isLoading:adminLoading, error:adminError} = useGetByIdAdminQuery(
@@ -53,7 +57,12 @@ const Sidebar: React.FC<SidebarProps> = ({ setTaskName, setJobName, isOpen, onTo
       {id:userData?.id, companyId:userData?.companyId},
       {skip:!isEmployee || !userData?.id || !userData?.companyId}
     );
-const user = superAdminData?.data || adminData?.data || employeeData?.data;
+    const isClient = userData?.role === "client";
+    const {data:clientData} = useGetClientProfileByIdQuery(
+      {id:userData?.id, companyId:userData?.companyId},
+      {skip:!isClient || !userData?.id || !userData?.companyId}
+    );
+const user = superAdminData?.data || adminData?.data || employeeData?.data || clientData?.data;
     
 
 const handleLogout = async () => {
@@ -92,6 +101,10 @@ const handleLogout = async () => {
           res = await logoutEmployee().unwrap();
           break;
 
+        case "client":
+          res = await logoutClient().unwrap();
+          break;
+
         default:
           console.warn("Unknown user role:", user?.role);
           break;
@@ -101,10 +114,12 @@ const handleLogout = async () => {
       console.warn("Logout API failed:", apiError?.data?.message || apiError?.data?.error || apiError?.message);
     }
   } finally {
+    const wasClient = user?.role === "client";
+
     localStorage.removeItem("user");
     // Phir socket disconnect karo
   if (socket.connected) socket.disconnect();
-    navigate("/login", { replace: true });
+    navigate(wasClient ? "/client/login" : "/login", { replace: true });
     toast({
       title: "Logged out successfully.",
       description: "You have been logged out of your account.",
@@ -206,6 +221,16 @@ const handleLogout = async () => {
   const handleLeadMouseLeave = () => setShowLeadSubMenu(false);
 
 
+  const handleClientMouseEnter = (e: React.MouseEvent<HTMLLIElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    setClientDropdownPos({ top: rect.top, left: rect.right });
+    setShowClientSubMenu(true);
+  };
+
+  const handleClientMouseLeave = () => setShowClientSubMenu(false);
+
+
   const toggleSidebar = () => {
     setLocalOpen(prev => !prev);
     onToggle();
@@ -214,17 +239,20 @@ const handleLogout = async () => {
     (item) => user && item.roles.includes(user.role)
   );
 const effectiveRole = user?.role === "admin" ? "admin" :
+    user?.role === "client" ? "client" :
     (user?.role === "manager" && Array.isArray(user?.managedDepartments) && user.managedDepartments.length > 0) ? "manager" : "employee";
 
 
   const filteredTaskSubMenu = taskSubMenu.filter(sub => sub.roles.includes(effectiveRole));
   const filteredLeadSubMenu = LeadSubMenu.filter(sub => sub.roles.includes(effectiveRole));
+  const filteredClientSubMenu = ClientSubMenu.filter(sub => sub.roles.includes(effectiveRole));
 
   const getRoleBadge = (role: string) => {
     const roleLabels = {
       super_admin: 'Super Admin',
       admin: 'Admin',
       employee: (user?.role === "manager" && user?.managedDepartments?.length > 0) ? `Department Manager(${user?.department?.name})` : `Employee (${user?.department?.name})`,
+      client: user?.clientCompanyName ? `Client (${user.clientCompanyName})` : "Client",
     };
     return roleLabels[role as keyof typeof roleLabels] || role;
   };
@@ -234,6 +262,7 @@ const effectiveRole = user?.role === "admin" ? "admin" :
       setShowTaskSubMenu(false);
       setShowJobSubMenu(false);
       setShowLeadSubMenu(false);
+      setShowClientSubMenu(false);
     }
   }, [isOpen]);
 
@@ -308,6 +337,7 @@ const effectiveRole = user?.role === "admin" ? "admin" :
               const isTasksActive = location.pathname.startsWith("/tasks");
               const isJobPortalActive = location.pathname.startsWith("/jobs");
               const isLeadPortalActive = location.pathname.startsWith("/leads");
+              const isClientPortalActive = location.pathname.startsWith("/client");
               const isThisActive = location.pathname === item.path;
 
               const renderItem = (itemLabel: string) => (
@@ -318,7 +348,8 @@ const effectiveRole = user?.role === "admin" ? "admin" :
                     "sidebar-item flex items-center justify-between p-2",
                     (itemLabel === "Tasks" && isTasksActive) ||
                       (itemLabel === "Job-Portal" && isJobPortalActive)
-                      || (itemLabel === "Lead-Portal" && isLeadPortalActive) || isThisActive
+                      || (itemLabel === "Lead-Portal" && isLeadPortalActive)
+                      || (itemLabel === "Client-Portal" && isClientPortalActive) || isThisActive
                       ? "bg-blue-600 text-white font-semibold"
                       : "",
                     !isOpen && "justify-center"
@@ -330,13 +361,14 @@ const effectiveRole = user?.role === "admin" ? "admin" :
                   </div>
 
                   {/* Arrow only for Tasks & Job-Portal */}
-                  {isOpen && (item.label === "Tasks" || item.label === "Job-Portal" || item.label === "Lead-Portal") && (
+                  {isOpen && (item.label === "Tasks" || item.label === "Job-Portal" || item.label === "Lead-Portal" || item.label === "Client-Portal") && (
                     <ChevronRight
                       className={cn(
                         "w-4 h-4 transition-transform duration-200",
                         item.label === "Tasks" && showTaskSubMenu && "rotate-90",
                         item.label === "Job-Portal" && showJobSubMenu && "rotate-90",
-                        item.label === "Lead-Portal" && showLeadSubMenu && "rotate-90"
+                        item.label === "Lead-Portal" && showLeadSubMenu && "rotate-90",
+                        item.label === "Client-Portal" && showClientSubMenu && "rotate-90"
                       )}
                     />
                   )}
@@ -482,6 +514,54 @@ const effectiveRole = user?.role === "admin" ? "admin" :
                 );
               }
 
+
+              // Client Portal Dropdown
+              if (item.label === "Client-Portal") {
+                return (
+                  <li
+                    key={item.path}
+                    className="relative"
+                    onMouseEnter={(e) => isOpen && handleClientMouseEnter(e)}
+                    onMouseLeave={handleClientMouseLeave}
+                  >
+                    {renderItem(item.label)}
+
+                    {isOpen && showClientSubMenu && createPortal(
+                      <div
+                        style={{ top: clientDropdownPos.top, left: clientDropdownPos.left }}
+                        className="fixed w-48 bg-sidebar shadow-lg border border-sidebar-border z-50 dropdown-portal"
+                        onMouseEnter={() => setShowClientSubMenu(true)}
+                        onMouseLeave={handleClientMouseLeave}
+                      >
+                        <ul>
+                          {filteredClientSubMenu.map(sub => (
+                            <li key={sub.path}>
+                              <NavLink
+                                to={sub.path}
+                                end={sub.path === "/client"}
+                                onClick={() => {
+                                  setTaskName("");
+                                  setJobName("");
+                                  setLeadName("");
+                                  setActiveSidebar(sub.label);
+                                  if (window.innerWidth <= 768 && isOpen) onToggle();
+                                }}
+                                className={({ isActive }) => cn(
+                                  "block px-4 py-2 text-sm text-white hover:bg-sidebar-accent",
+                                  isActive && "bg-sidebar-accent font-medium"
+                                )}
+                              >
+                                {sub.label}
+                              </NavLink>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>,
+                      document.body
+                    )}
+                  </li>
+                );
+              }
 
               return <li key={item.path}>{renderItem(item.label)}</li>;
             })}

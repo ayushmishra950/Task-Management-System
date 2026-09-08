@@ -14,6 +14,7 @@ import { useGetByIdAdminQuery } from "@/redux-toolkit/api/admin/auth.api";
 import DeleteCard from "../cards/DeleteCard";
 import {useLogoutEmployeeMutation} from "@/redux-toolkit/api/employee/auth.api";
 import {useLogoutAdminMutation} from "@/redux-toolkit/api/admin/auth.api";
+import {useLogoutClientMutation, useGetClientProfileByIdQuery} from "@/redux-toolkit/api/client/auth.api";
 import { socket } from "@/socket/socket";
 
 interface HeaderProps {
@@ -50,8 +51,9 @@ const Header: React.FC<HeaderProps> = ({
   const [logoutSuperAdmin,{ isLoading: logoutSuperAdminLoading }] = useLogoutSuperAdminMutation();
   const [logoutAdmin,{ isLoading: logoutAdminLoading }] = useLogoutAdminMutation();
   const [logoutEmployee,{ isLoading: logoutEmployeeLoading }] = useLogoutEmployeeMutation();
+  const [logoutClient,{ isLoading: logoutClientLoading }] = useLogoutClientMutation();
 
-  const loading = logoutSuperAdminLoading || logoutAdminLoading || logoutEmployeeLoading;
+  const loading = logoutSuperAdminLoading || logoutAdminLoading || logoutEmployeeLoading || logoutClientLoading;
 
   const { data: superAdminData, isLoading } = useGetSuperAdminQuery(
     { id: userData?.id },
@@ -73,7 +75,12 @@ const Header: React.FC<HeaderProps> = ({
     { id: userData?.id, companyId: userData?.companyId },
     { skip: !isEmployee || !userData?.id || !userData?.companyId },
   );
-  const user = superAdminData?.data || adminData?.data || employeeData?.data;
+  const isClient = userData?.role === "client";
+  const { data: clientData } = useGetClientProfileByIdQuery(
+    { id: userData?.id, companyId: userData?.companyId },
+    { skip: !isClient || !userData?.id || !userData?.companyId },
+  );
+  const user = superAdminData?.data || adminData?.data || employeeData?.data || clientData?.data;
 
 const handleLogout = async () => {
   try {
@@ -111,6 +118,10 @@ const handleLogout = async () => {
           res = await logoutEmployee().unwrap();
           break;
 
+        case "client":
+          res = await logoutClient().unwrap();
+          break;
+
         default:
           console.warn("Unknown user role:", user?.role);
           break;
@@ -120,9 +131,11 @@ const handleLogout = async () => {
       console.warn("Logout API failed:", apiError?.data?.message || apiError?.data?.error || apiError?.message);
     }
   } finally {
+    const wasClient = user?.role === "client";
+
     localStorage.removeItem("user");
     if(socket.connected) socket.disconnect();
-    navigate("/login", { replace: true });
+    navigate(wasClient ? "/client/login" : "/login", { replace: true });
     toast({
       title: "Logged out successfully.",
       description: "You have been logged out of your account.",

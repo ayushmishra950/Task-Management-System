@@ -22,7 +22,7 @@ export const passwordValidationSchemas = {
       companyId: z.string({ message: "companyId is required." }), // यहाँ Required है
     }),
     body: z.object({
-      role: z.enum(["admin", "manager", "employee"], { message: "Invalid role" }),
+      role: z.enum(["admin", "manager", "employee", "client"], { message: "Invalid role" }),
       password: passwordSchema,
     }),
   }),

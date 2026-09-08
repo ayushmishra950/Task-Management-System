@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Bell, FolderKanban, Trash, Clock } from "lucide-react";
+import { Bell, FolderKanban, Trash, Clock, Inbox } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -80,6 +80,9 @@ const Notifications: React.FC = () => {
       case "SubTask":
         return <FolderKanban className="w-5 h-5 text-purple-500" />;
 
+      case "ClientRequest":
+        return <Inbox className="w-5 h-5 text-emerald-600" />;
+
       default:
         return <Bell className="w-5 h-5 text-blue-500" />;
     }
@@ -120,7 +123,13 @@ const Notifications: React.FC = () => {
          *
          * navigate(`/tasks/projects/${notification.entityId}`);
          */
-        navigate("/tasks/projects");
+        // Client apne project section me jayega, staff admin wale projects page par
+        navigate(user?.role === "client" ? "/client/projects" : "/tasks/projects");
+        break;
+
+      case "ClientRequest":
+        // Client apni request list dekhta hai, admin apna inbox
+        navigate(user?.role === "client" ? "/client/requests" : "/tasks/client-requests");
         break;
 
       default:

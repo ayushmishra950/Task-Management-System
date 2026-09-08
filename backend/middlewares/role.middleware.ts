@@ -72,3 +72,16 @@ export const accessTeamRoleOnly = (req:Request, res:Response, next:NextFunction)
         next(error);
     }
 };
+
+
+
+export const accessClientRoleOnly = (req:Request, res:Response, next:NextFunction) => {
+  try{
+        if(req.user?.role !== "client") return res.status(403).json({ success: false, message: "Access Denied: Restricted to clients only."});
+
+        next();
+    }
+    catch(error:any){
+        next(error);
+    }
+};

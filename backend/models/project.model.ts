@@ -12,6 +12,8 @@ export interface IProject {
     remarks?:string,
     createdBy:mongoose.Types.ObjectId,
     companyId:mongoose.Types.ObjectId,
+    clientId?:mongoose.Types.ObjectId,
+    sourceRequestId?:mongoose.Types.ObjectId,
 };
 
 
@@ -25,7 +27,9 @@ const projectSchema = new mongoose.Schema<IProject>({
     status: {type:String, enum:["pending" , "in_progress" , "completed" , "cancelled" ], default:"pending"},
     remarks:{type:String},
     createdBy:{type:mongoose.Schema.Types.ObjectId, ref:"User", required:true},
-    companyId:{type:mongoose.Schema.Types.ObjectId, ref:"Company", required:true}
+    companyId:{type:mongoose.Schema.Types.ObjectId, ref:"Company", required:true},
+    clientId:{type:mongoose.Schema.Types.ObjectId, ref:"User"},
+    sourceRequestId:{type:mongoose.Schema.Types.ObjectId, ref:"ClientRequest"}
 }, {timestamps:true});
 
 projectSchema.index({companyId:1, name:1}, {unique:true});

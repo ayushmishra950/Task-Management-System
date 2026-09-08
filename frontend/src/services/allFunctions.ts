@@ -1,5 +1,5 @@
 
-import { LayoutDashboard, Users, Building2, User, IndianRupee, FolderKanban, Clock, CalendarDays, Receipt, Wallet, Bell, BarChart3, Settings, LogOut, Briefcase } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, User, IndianRupee, FolderKanban, Clock, CalendarDays, Receipt, Wallet, Bell, BarChart3, Settings, LogOut, Briefcase, Handshake } from 'lucide-react';
 
 
 //  strong password check k liye hai y 
@@ -202,6 +202,34 @@ export const getStatusColor = (status: string) => {
   }
 };
 
+export const getClientRequestStatusColor = (status: string) => {
+  switch (status) {
+    case "pending": return "bg-yellow-100 text-yellow-800";
+    case "in_review": return "bg-blue-100 text-blue-800";
+    case "approved": return "bg-emerald-100 text-emerald-800";
+    case "rejected": return "bg-red-100 text-red-800";
+    case "completed": return "bg-green-100 text-green-800";
+    default: return "bg-gray-100 text-gray-800";
+  }
+};
+
+
+export const clientRequestStatusLabel = (status: string) => {
+  switch (status) {
+    case "pending": return "Pending";
+    case "in_review": return "In Review";
+    case "approved": return "Approved";
+    case "rejected": return "Rejected";
+    case "completed": return "Completed";
+    default: return status;
+  }
+};
+
+
+export const clientRequestTypeLabel = (requestType: string) =>
+  requestType === "new_project" ? "New Project" : "Project Update";
+
+
 export const getPriorityColor = (priority: string) => {
   switch (priority) {
     case "low": return "bg-yellow-100 text-yellow-800";
@@ -351,7 +379,7 @@ export interface NavItem {
   icon: React.ElementType;
   label: string;
   path: string;
-  roles: ('super_admin' | 'admin' | 'employee' | 'manager')[];
+  roles: ('super_admin' | 'admin' | 'employee' | 'manager' | 'client')[];
 }
 
 // export const navItems: NavItem[] = [
@@ -386,6 +414,7 @@ export const navItems: NavItem[] = [
   { icon: Bell, label: 'Job-Portal', path: '/jobs', roles: [] },
   { icon: User, label: 'Lead-Portal', path: '/leads', roles: [] },
   { icon: BarChart3, label: 'Reports', path: '/reports', roles: [] },
+  { icon: Handshake, label: 'Client-Portal', path: '/client', roles: ['client'] },
   { icon: Settings, label: 'Setting', path: '/setting', roles: ['super_admin', 'admin', 'employee', "manager",] },
 ];
 
@@ -398,7 +427,17 @@ export const taskSubMenu = [
   { label: 'Completed Tasks', path: '/tasks/completed-task', roles: ["admin", "manager", "employee"] },
   { label: 'Reassigned Tasks', path: '/tasks/reassigned-task', roles: ["admin", "manager", "employee"] },
   // { label: 'Overdue Tasks', path: '/tasks/overdue', roles: ["admin", "manager", "employee"] },
-  { label: "Task Manager", path: "/tasks/manager", roles: ["admin"] }
+  { label: "Task Manager", path: "/tasks/manager", roles: ["admin"] },
+  { label: 'Clients', path: '/tasks/clients', roles: ["admin"] },
+  { label: 'Client Requests', path: '/tasks/client-requests', roles: ["admin"] }
+];
+
+
+/** Client Portal Submenu (Client Only) */
+export const ClientSubMenu = [
+  { label: 'Dashboard', path: '/client', roles: ["client"] },
+  { label: 'My Requests', path: '/client/requests', roles: ["client"] },
+  { label: 'My Projects', path: '/client/projects', roles: ["client"] },
 ];
 
 
@@ -456,6 +495,31 @@ export const getMonthlySummary = (userId: string, attendanceMap) => {
 };
 
 export const headingManage = (path: string, role: string) => {
+  // ----------------------------
+  // Client Portal Section
+  // ----------------------------
+  if (path.startsWith("/client")) {
+    if (path === "/client/requests") {
+      return {
+        title: "My Requests",
+        description: "Raise a new project request or ask for an update on a running project.",
+        icon: "Inbox",
+      };
+    }
+    if (path === "/client/projects") {
+      return {
+        title: "My Projects",
+        description: "Track the progress of the projects assigned to you.",
+        icon: "Folder",
+      };
+    }
+    return {
+      title: "Client Dashboard",
+      description: "Overview of your requests and projects.",
+      icon: "LayoutDashboard",
+    };
+  }
+
   // ----------------------------
   // Tasks Section
   // ----------------------------
@@ -517,6 +581,22 @@ if (path === "/tasks/reassigned-task") {
         title: "Task Manager",
         description: "Manage and track your Department Managers.",
         icon: "Users",
+      };
+    }
+
+    if (path === "/tasks/clients") {
+      return {
+        title: "Clients",
+        description: "Manage the client accounts of your company.",
+        icon: "Handshake",
+      };
+    }
+
+    if (path === "/tasks/client-requests") {
+      return {
+        title: "Client Requests",
+        description: "Live project requests and update requests raised by your clients.",
+        icon: "Inbox",
       };
     }
     return {

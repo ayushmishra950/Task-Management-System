@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ProjectFormData, ProjectFormProps, Priority } from "@/types/index";
 import { formatForDateTimeInput } from "@/services/allFunctions";
 import {useCreateProjectMutation,useUpdateProjectMutation} from "@/redux-toolkit/api/admin/project.api";
+import {useGetAllClientsQuery} from "@/redux-toolkit/api/admin/client.api";
 
 
 const ProjectForm: React.FC<ProjectFormProps> = ({
@@ -30,6 +31,12 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
   const [showScrollArrow, setShowScrollArrow] = useState(false);
   const startDateRef = useRef(null);
   const endDateRef = useRef(null);
+  const {data:clientData} = useGetAllClientsQuery(
+    {companyId:user?.companyId},
+    {skip:!isOpen || user?.role !== "admin" || !user?.companyId}
+  );
+  const clients = clientData?.data || [];
+
   const [createProject, {isLoading:createLoading}] = useCreateProjectMutation();
   const [updateProject,{isLoading:updateLoading}] = useUpdateProjectMutation();
   const loading = createLoading || updateLoading;
@@ -45,11 +52,12 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     if (initialData) {
       setFormData({
         ...initialData,
+        clientId: initialData.clientId?._id || initialData.clientId || "",
         startDate: formatForDateTimeInput(initialData.startDate),
         endDate: formatForDateTimeInput(initialData.endDate),
       });
     } else {
-      setFormData({ priority: 'medium', startDate: '', endDate: '' });
+      setFormData({ priority: 'medium', startDate: '', endDate: '', clientId: '' });
     }
   }, [initialData, isOpen]);
 
@@ -93,8 +101,18 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
       }
     }
     try {  
-    const obj = {...formData, companyId:user?.companyId, createdBy:user?.id, url:"http://localhost:5000", status:"pending"}
-      console.log("formData:",obj)
+    const {clientId, ...restForm} = formData as any;
+
+    const obj: any = {
+      ...restForm,
+      companyId: user?.companyId,
+      createdBy: user?.id,
+      url: "http://localhost:5000",
+      // Edit par project ka mojuda status wahi rehna chahiye, reset nahi hona chahiye
+      status: isEdit ? (initialData?.status || "pending") : "pending",
+      // Khali value ka matlab hai client se link hata do
+      clientId: clientId || null,
+    };
 
       let res;
       if (isEdit) {
@@ -233,6 +251,29 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
                   <SelectItem value="urgent">Urgent</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="grid gap-1.5 my-2">
+              <Label htmlFor="clientId" className="text-sm font-medium">Client (Optional)</Label>
+              <Select
+                value={formData.clientId || 'none'}
+                onValueChange={(v: string) => setFormData({ ...formData, clientId: v === 'none' ? '' : v })}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder={clients.length ? "Link this project to a client" : "No client added yet"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No client</SelectItem>
+                  {clients.map((client: any) => (
+                    <SelectItem key={client._id} value={client._id}>
+                      {client.fullName}{client.clientCompanyName ? ` — ${client.clientCompanyName}` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Linked client is able to see this project and raise update requests on it.
+              </p>
             </div>
 
             <div className="grid gap-1.5">
