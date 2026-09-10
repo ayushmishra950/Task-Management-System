@@ -126,6 +126,22 @@ export const getEmployeeValdationSchema = z.object({
         companyId:z.string({message:"company Id is required."})
     }),
     body : z.object({}).optional(),
+    // Forms sirf ACTIVE log chahte hain, Employees page sabko
+    query:z.object({
+        status: z.enum(["ACTIVE", "RELIEVED", "ON_HOLD"]).optional(),
+    }).optional(),
+});
+
+
+/** Soft delete ko wapas palatne ke liye (RELIEVED -> ACTIVE). */
+export const updateEmployeeStatusValidationSchema = z.object({
+    params : z.object({
+        id:z.string({message:"Id is required."}),
+        companyId:z.string({message:"company Id is required."}),
+    }),
+    body : z.object({
+        status: z.enum(["ACTIVE", "RELIEVED", "ON_HOLD"], {message:"Status must be ACTIVE, RELIEVED or ON_HOLD."}),
+    }),
     query:z.object({}).optional(),
 });
 

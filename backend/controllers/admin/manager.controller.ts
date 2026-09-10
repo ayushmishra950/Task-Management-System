@@ -28,7 +28,7 @@ export const createManager = async(req:Request<ManagerParams,{}, {}>, res:Respon
 
 export const getManager = async(req:Request<GetManagerParams,{}, {}>, res:Response, next:NextFunction) => {
     try{
-       const manager = await User.find({ companyId:req.params.companyId,role:"manager", managedDepartments:{$exists:true, $not:{$size:0}}}, {managedDepartments:1, fullName:1, email:1, contact:1, role:1}).populate("managedDepartments", "name").populate("department", "name");
+       const manager = await User.find({ companyId:req.params.companyId,role:"manager", status:"ACTIVE", managedDepartments:{$exists:true, $not:{$size:0}}}, {managedDepartments:1, fullName:1, email:1, contact:1, role:1}).populate("managedDepartments", "name").populate("department", "name");
        if(!manager?.length) return res.status(404).json({message:"Manager Not Found.", success:false});
 
        res.status(200).json({success:true, data:manager});

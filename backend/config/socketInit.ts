@@ -30,8 +30,11 @@ export const initSocket = (server:HttpServer) => {
    io.use(async(socket:Socket, next) => {
        try{
         const cookies = parse(socket.handshake.headers.cookie || "");
-         const accessToken = cookies.accessToken;
-         
+
+         // Web browser cookies bhejta hai; mobile app websocket par cookies nahi bhej sakta,
+         // isliye wo handshake.auth me token deta hai. Dono support karte hain.
+         const accessToken = cookies.accessToken || socket.handshake.auth?.accessToken;
+
          if(!accessToken) return next(new Error("Authentication Error: Token missing."));
            
             let decoded:any;
@@ -49,7 +52,7 @@ export const initSocket = (server:HttpServer) => {
             }
            catch (jwtError: any) {
                 if (jwtError?.name === "TokenExpiredError") {
-                    const refreshToken = cookies.refreshToken;
+                    const refreshToken = cookies.refreshToken || socket.handshake.auth?.refreshToken;
                     if (!refreshToken) return next(new Error("Authentication Error: Token Expired."));
 
                     const incomingHash = crypto.createHash("sha256").update(refreshToken).digest("hex");

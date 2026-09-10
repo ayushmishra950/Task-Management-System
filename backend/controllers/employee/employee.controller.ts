@@ -27,6 +27,9 @@ export const loginEmployee = async (req: Request<{},{}, LoginEmployeeInput>, res
 
     const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) return res.status(401).json({ success: false, message: "Invalid credentials."});
+
+    // Soft-deleted (RELIEVED) ya ON_HOLD user login nahi kar sakta
+    if (user.status !== "ACTIVE") return res.status(403).json({ success: false, message: "Your account is no longer active. Please contact your admin."});
  
     const sessionId = new mongoose.Types.ObjectId();
 

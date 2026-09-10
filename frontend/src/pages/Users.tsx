@@ -50,7 +50,7 @@ const Users: React.FC = () => {
   const navigate = useNavigate();
   const [deleteAdmin, {isLoading:isDeleting}] = useDeleteAdminMutation();
   const [updateAdminStatus, {isLoading: updateStatusLoading}] = useUpdateAdminStatusMutation();
-  const {data:employeeData, isLoading:employeeLoading} = useGetAllEmployeeQuery({companyId:user?.companyId},{skip:!user?.id || !user?.role});
+  const {data:employeeData, isLoading:employeeLoading, refetch:refetchEmployees} = useGetAllEmployeeQuery({companyId:user?.companyId},{skip:!user?.id || !user?.role});
   const {data, isLoading} = useGetAllAdminsQuery(undefined, {skip: user?.role !== "super_admin" || !user?.id || !user?.role});
   const adminList = data?.data;
   const userList = employeeData?.data || [];
@@ -76,10 +76,20 @@ const Users: React.FC = () => {
       setManagerRefresh(true);
     });
 
+    // Kahin se bhi employee relieve/activate ho to list turant update ho
+    const handleStatusChanged = () => {
+      refetchEmployees();
+      setEmployeeListRefresh(true);
+      setManagerRefresh(true);
+    };
+
+    socket.on("employee:statusChanged", handleStatusChanged);
+
     return () => {
       socket.off("getEmployeeRefresh");
+      socket.off("employee:statusChanged", handleStatusChanged);
     };
-  }, []);
+  }, [refetchEmployees]);
 
   const handleUpdateEmployeeStatus = async (id) => {
     const obj = { adminId: user?._id, companyId: user?.companyId?._id, employeeId: id, status: "ACTIVE" }

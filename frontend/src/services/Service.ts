@@ -686,9 +686,11 @@ export const updateEmployees = async (id, formData) => {
 
 
 export const updateEmployeeStatus = async (obj) => {
+  // Backend route: PATCH /api/admin/employee/status/:id/:companyId
   const res = await axios.patch(
-    `${import.meta.env.VITE_API_URL}/api/employees/updateEmployee/status`,
-    obj,
+    `${import.meta.env.VITE_API_URL}/api/admin/employee/status/${obj.employeeId}/${obj.companyId}`,
+    { status: obj.status },
+    { withCredentials: true },
   );
 
   return res;

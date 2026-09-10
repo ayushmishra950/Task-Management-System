@@ -80,7 +80,9 @@ export const refreshSessionToken = async (req: Request, res: Response, next: Nex
       maxAge: 7 * 24 * 60 * 60 * 1000 
     });
 
-    return res.status(200).json({ success: true, message: "Tokens refreshed successfully."});
+    // Mobile app ke liye naye tokens body me bhi chahiye
+    return res.status(200).json({ success: true, message: "Tokens refreshed successfully.",
+      data: { tokens: { accessToken: newAccessToken, refreshToken: newRefreshToken } }});
 
   } catch (error: any) {
     console.error("Refresh Token Fatal Error:-", error?.message);

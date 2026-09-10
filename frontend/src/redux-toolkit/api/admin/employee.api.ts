@@ -19,9 +19,9 @@ export const admin_Employee_Api = createApi({
     }),
 
     // GET ALL EMPLOYEES
-    getAllEmployee: builder.query<any, {companyId:string}>({
-      query: ({companyId}) => ({
-        url: `/api/admin/employee/get/${companyId}`,
+    getAllEmployee: builder.query<any, {companyId:string, status?:string}>({
+      query: ({companyId, status}) => ({
+        url: `/api/admin/employee/get/${companyId}${status ? `?status=${status}` : ""}`,
         method: "GET",
       }),
       providesTags:["Employee"]

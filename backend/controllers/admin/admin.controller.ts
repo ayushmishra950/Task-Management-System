@@ -103,6 +103,12 @@ export const loginAdmin = async (req: Request<{},{}, LoginAdminInput>, res: Resp
                 id: user._id,
                 role: user.role,
                 companyId: user.companyId
+            },
+            // Mobile app cookies use nahi kar sakta, isliye tokens body me bhi bhejte hain.
+            // Web client in fields ko ignore karta hai aur cookies se hi chalta rehta hai.
+            tokens: {
+                accessToken,
+                refreshToken: rawRefreshToken
             }}});
 
   } catch (error: any) {
