@@ -11,7 +11,7 @@ import Dashboard from "@/pages/Dashboard";
 import Users from "@/pages/Users";
 import Companies from "@/pages/Companies";
 import Departments from "@/pages/Departments";
-import Attendance from "@/pages/Attendance";
+import Attendance from "@/pages/Attendance"; 
 import Leave from "@/pages/Leave";
 import Expenses from "@/pages/Expenses";
 import Payroll from "@/pages/Payroll";
@@ -194,6 +194,6 @@ const App = () => (
     </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>
-);
+); 
 
 export default App;
