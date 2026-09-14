@@ -177,7 +177,6 @@ const Notifications: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Notification Page</title>
         <meta name="description" content="View and manage your notifications" />
       </Helmet>
 
@@ -297,6 +296,14 @@ const Notifications: React.FC = () => {
                             {notification?.message ||
                               "You have a new notification."}
                           </p>
+
+                          {/* Status change ka reason (agar diya gaya ho) */}
+                          {notification?.reason && (
+                            <p className="text-sm mt-1 rounded-md bg-muted/60 px-2 py-1">
+                              <span className="font-medium">Reason:</span>{" "}
+                              <span className="text-muted-foreground break-words">{notification.reason}</span>
+                            </p>
+                          )}
 
                           {/* Created By */}
                           {notification?.createdBy &&

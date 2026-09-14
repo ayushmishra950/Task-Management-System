@@ -11,6 +11,7 @@ export interface ISubTask {
     priority:priorityTypes,
      status:statusTypes,
     remarks?:string,
+    statusReason?:string,
     taskId:mongoose.Types.ObjectId,
     companyId:mongoose.Types.ObjectId,
     createdBy:mongoose.Types.ObjectId,
@@ -27,6 +28,8 @@ const subTaskSchema = new mongoose.Schema<ISubTask>({
     priority:{type:String, enum:["low" , "medium" , "high" , "urgent"], default:"medium"},
     status: {type:String, enum:["pending" , "in_progress" , "completed" , "cancelled" ], default:"pending"},
     remarks:{type:String},
+    // Status change karte waqt diya gaya reason (optional)
+    statusReason:{type:String, trim:true},
      taskId:{type:mongoose.Schema.Types.ObjectId, ref:"Task", required:true},
      companyId:{type:mongoose.Schema.Types.ObjectId, ref:"Company", required:true},
      createdBy:{type:mongoose.Schema.Types.ObjectId, ref:"User", required:true},

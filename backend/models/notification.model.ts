@@ -10,6 +10,7 @@ export interface INotification {
     entityId: mongoose.Types.ObjectId;
     title: string;
     message: string;
+    reason?: string;
     isRead: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -25,6 +26,8 @@ const notificationSchema = new mongoose.Schema<INotification>(
         entityId: { type: mongoose.Schema.Types.ObjectId, required: true},
         title: { type: String, required: true, trim: true},
         message: { type: String, required: true, trim: true},
+        // Status change notification ke saath diya gaya reason (optional)
+        reason: { type: String, trim: true},
         isRead: {type: Boolean,default: false},
     },{ timestamps: true});
 

@@ -113,7 +113,8 @@ export const updateProject = async(req:Request<UpdateProjectSchemaParams, {}, Up
 
 export const updateProjectStatus = async(req:Request<UpdateProjectStatusParams, {}, UpdateProjectStatusInput>, res:Response, next:NextFunction) => {
 try {
-      const subTask = await Project.findOneAndUpdate({_id:req.params.id, companyId:req.params.companyId}, {$set:{status:req.body.status}},{new:true, runValidators:true});
+      // Reason optional hai - khaali ho to purana reason bhi hat jata hai
+      const subTask = await Project.findOneAndUpdate({_id:req.params.id, companyId:req.params.companyId}, {$set:{status:req.body.status, statusReason:req.body.reason?.trim() || ""}},{new:true, runValidators:true});
       if(!subTask) return res.status(404).json({success:false, message:"Sub Task Not Found."});
 
       if(subTask.clientId) emitClientProjectChanged({clientIds:[subTask.clientId], action:"status_updated", projectId:subTask._id});

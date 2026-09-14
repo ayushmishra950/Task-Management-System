@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import PageTitle from './PageTitle';
 
 
 const MainLayout: React.FC = () => {
@@ -20,6 +21,8 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className={`transition-all duration-300 flex-1 ${sidebarOpen ? 'ml-64' : 'ml-16'} max-md:ml-0`}>
+      {/* Browser tab title: login role + current page */}
+      <PageTitle />
       {/* Sidebar only renders when open */}
       <Sidebar
         setTaskName={setTaskName}

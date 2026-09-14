@@ -58,7 +58,7 @@ const Login: React.FC = () => {
 
   return (
     <>   <Helmet>
-      <title>Login Page</title>
+      <title>Employee & Manager Login</title>
       <meta name="description" content="This is the home page of our app" />
     </Helmet>
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -69,13 +69,13 @@ const Login: React.FC = () => {
               <Briefcase className="w-8 h-8 text-primary-foreground" />
             </div>
             <h1 className="text-3xl font-bold">OfficeHub</h1>
-            <p className="text-muted-foreground mt-2">Office Management System</p>
+            <p className="text-muted-foreground mt-2">Employee &amp; Manager Login</p>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Welcome back</CardTitle>
-              <CardDescription>Sign in to continue</CardDescription>
+              <CardTitle>Employee / Manager Login</CardTitle>
+              <CardDescription>Only Employees and Managers can sign in here.</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">

@@ -140,19 +140,23 @@ export const getClientDashboardSummary = async (req: Request, res: Response, nex
   try {
     const baseFilter = { companyId: req.user?.companyId, clientId: req.user?.id };
 
-    const [total, pending, inReview, approved, rejected, completed, projects] = await Promise.all([
+    const projectFilter = { companyId: req.user?.companyId, clientId: req.user?.id };
+
+    const [total, pending, inReview, approved, rejected, completed, projects, overdueProjects] = await Promise.all([
       ClientRequest.countDocuments(baseFilter),
       ClientRequest.countDocuments({ ...baseFilter, status: "pending" }),
       ClientRequest.countDocuments({ ...baseFilter, status: "in_review" }),
       ClientRequest.countDocuments({ ...baseFilter, status: "approved" }),
       ClientRequest.countDocuments({ ...baseFilter, status: "rejected" }),
       ClientRequest.countDocuments({ ...baseFilter, status: "completed" }),
-      Project.countDocuments({ companyId: req.user?.companyId, clientId: req.user?.id }),
+      Project.countDocuments(projectFilter),
+      // Overdue = endDate nikal chuki hai aur project completed/cancelled nahi hua
+      Project.countDocuments({ ...projectFilter, endDate: { $lt: new Date() }, status: { $nin: ["completed", "cancelled"] as ("completed" | "cancelled")[] } }),
     ]);
 
     return res.status(200).json({
       success: true,
-      data: { total, pending, inReview, approved, rejected, completed, projects },
+      data: { total, pending, inReview, approved, rejected, completed, projects, overdueProjects },
     });
   } catch (error: any) {
     console.log("Client Dashboard Summary Error:-", error?.message);

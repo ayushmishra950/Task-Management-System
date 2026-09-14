@@ -233,7 +233,6 @@ const getStatusBadge = (
       />
 
       <Helmet>
-        <title>Jobs | Job Portal</title>
       </Helmet>
 
       <div className="flex flex-col min-h-screen bg-gray-50/40 p-6 space-y-6 mt-[-40px]">

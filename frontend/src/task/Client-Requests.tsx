@@ -100,7 +100,6 @@ const ClientRequests: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Client Requests</title>
       </Helmet>
 
       <DeleteCard

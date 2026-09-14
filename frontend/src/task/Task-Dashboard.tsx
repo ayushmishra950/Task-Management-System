@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -7,6 +8,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table,
@@ -22,6 +24,7 @@ import {
   Clock,
   AlertCircle,
   FolderOpen,
+  ArrowRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate, getStatusColor } from "@/services/allFunctions";
@@ -29,9 +32,56 @@ import { Helmet } from "react-helmet-async";
 import {useDashboardSummaryQuery, useDashboardDataQuery } from "@/redux-toolkit/api/admin/project.api";
 import { socket } from "@/socket/socket";
 
+type SummaryCard = {
+  title: string;
+  valueKey: string;
+  description: string;
+  icon: React.ElementType;
+  iconClassName: string;
+  /** Card click par kis page par jana hai */
+  path: string;
+  /** Target page par pehle se lagne wala status filter */
+  status?: "pending" | "in_progress" | "completed" | "overdue";
+  /** "This Month" cards ke liye createdAt filter */
+  period?: "this_month";
+};
+
+const SUMMARY_CARDS: Record<string, SummaryCard[]> = {
+  admin: [
+    { title: "Total Projects", valueKey: "totalProjects", description: "All company projects", icon: Briefcase, iconClassName: "text-muted-foreground", path: "/tasks/projects" },
+    { title: "This Month Projects", valueKey: "currentMonthProjects", description: "Created this month", icon: Briefcase, iconClassName: "text-blue-500", path: "/tasks/projects", period: "this_month" },
+    { title: "Completed Projects", valueKey: "completedProjects", description: "Successfully completed", icon: Briefcase, iconClassName: "text-green-500", path: "/tasks/projects", status: "completed" },
+    { title: "Overdue Projects", valueKey: "overdueProjects", description: "End date passed, not completed", icon: AlertCircle, iconClassName: "text-red-500", path: "/tasks/projects", status: "overdue" },
+    { title: "Total Tasks", valueKey: "totalTasks", description: "All company tasks", icon: LayoutDashboard, iconClassName: "text-muted-foreground", path: "/tasks/task" },
+    { title: "This Month Tasks", valueKey: "currentMonthTasks", description: "Created this month", icon: LayoutDashboard, iconClassName: "text-blue-500", path: "/tasks/task", period: "this_month" },
+    { title: "Completed Tasks", valueKey: "completedTasks", description: "Successfully completed", icon: LayoutDashboard, iconClassName: "text-green-500", path: "/tasks/task", status: "completed" },
+    { title: "Pending Tasks", valueKey: "pendingTasks", description: "Requires attention", icon: Clock, iconClassName: "text-yellow-500", path: "/tasks/task", status: "pending" },
+    { title: "In Progress Tasks", valueKey: "inProgressTasks", description: "Active workflows", icon: FolderOpen, iconClassName: "text-blue-500", path: "/tasks/task", status: "in_progress" },
+    { title: "Overdue Tasks", valueKey: "overdueTasks", description: "End date passed, not completed", icon: AlertCircle, iconClassName: "text-red-500", path: "/tasks/task", status: "overdue" },
+  ],
+  manager: [
+    { title: "Total Assigned Tasks", valueKey: "totalTasks", description: "Tasks assigned to you", icon: LayoutDashboard, iconClassName: "text-muted-foreground", path: "/tasks/task" },
+    { title: "Completed Tasks", valueKey: "completedTasks", description: "Tasks completed by you", icon: LayoutDashboard, iconClassName: "text-green-500", path: "/tasks/task", status: "completed" },
+    { title: "Overdue Tasks", valueKey: "overdueTasks", description: "End date passed, not completed", icon: AlertCircle, iconClassName: "text-red-500", path: "/tasks/task", status: "overdue" },
+    { title: "Total Sub Tasks", valueKey: "totalSubTasks", description: "Sub tasks created by you", icon: FolderOpen, iconClassName: "text-muted-foreground", path: "/tasks/sub-task" },
+    { title: "Completed Sub Tasks", valueKey: "completedSubTasks", description: "Successfully completed", icon: FolderOpen, iconClassName: "text-green-500", path: "/tasks/sub-task", status: "completed" },
+    { title: "Pending Sub Tasks", valueKey: "pendingSubTasks", description: "Requires attention", icon: Clock, iconClassName: "text-yellow-500", path: "/tasks/sub-task", status: "pending" },
+    { title: "In Progress Sub Tasks", valueKey: "inProgressSubTasks", description: "Active sub tasks", icon: FolderOpen, iconClassName: "text-blue-500", path: "/tasks/sub-task", status: "in_progress" },
+    { title: "Overdue Sub Tasks", valueKey: "overdueSubTasks", description: "End date passed, not completed", icon: AlertCircle, iconClassName: "text-red-500", path: "/tasks/sub-task", status: "overdue" },
+  ],
+  employee: [
+    { title: "Total Assigned Sub Tasks", valueKey: "totalSubTasks", description: "Sub tasks assigned to you", icon: FolderOpen, iconClassName: "text-muted-foreground", path: "/tasks/sub-task" },
+    { title: "Completed Sub Tasks", valueKey: "completedSubTasks", description: "Successfully completed", icon: FolderOpen, iconClassName: "text-green-500", path: "/tasks/sub-task", status: "completed" },
+    { title: "Pending Sub Tasks", valueKey: "pendingSubTasks", description: "Requires attention", icon: Clock, iconClassName: "text-yellow-500", path: "/tasks/sub-task", status: "pending" },
+    { title: "In Progress Sub Tasks", valueKey: "inProgressSubTasks", description: "Active sub tasks", icon: FolderOpen, iconClassName: "text-blue-500", path: "/tasks/sub-task", status: "in_progress" },
+    { title: "Overdue Sub Tasks", valueKey: "overdueSubTasks", description: "End date passed, not completed", icon: AlertCircle, iconClassName: "text-red-500", path: "/tasks/sub-task", status: "overdue" },
+  ],
+};
+
 const TaskDashboard: React.FC = () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { data: summaryData, isLoading: isSummaryLoading, isError: isSummaryError, error: summaryError, refetch:dashboardSummaryRefetch } = useDashboardSummaryQuery(undefined, {skip:!user?.id || !user?.role});
   const dashboardSummary = summaryData?.data || {};
   const { data, isLoading, isError, error, refetch:dashboardDataRefetch } = useDashboardDataQuery(undefined, {skip:!user?.id || !user?.role});
@@ -40,6 +90,21 @@ const TaskDashboard: React.FC = () => {
   const projects = dashboardData?.projects || [];
   const tasks = dashboardData?.tasks || [];
   const subTasks = dashboardData?.subTasks || [];
+
+  // Row click par usi item ke apne page par jao aur uska detail card khol do
+  const openProjectDetail = (project: any) =>
+    navigate("/tasks/projects", { state: { viewProjectId: project?._id } });
+
+  const openTaskDetail = (task: any) =>
+    navigate("/tasks/task", { state: { viewTaskId: task?._id } });
+
+  const openSubTaskDetail = (subTask: any) =>
+    navigate("/tasks/sub-task", { state: { viewSubTaskId: subTask?._id } });
+
+  // "View All" ke liye har table ka list page
+  const leftTablePath =
+    user?.role === "admin" ? "/tasks/projects" : user?.role === "manager" ? "/tasks/task" : "/tasks/sub-task";
+  const rightTablePath = user?.role === "admin" ? "/tasks/task" : "/tasks/sub-task";
 
   useEffect(() => {
        const handleNotification = async(data) => {
@@ -54,380 +119,55 @@ const TaskDashboard: React.FC = () => {
          socket.off("notification", handleNotification);
        };
      },[dashboardSummaryRefetch,dashboardDataRefetch, user?.id]);
- 
+
 
   return (
     <>
       <Helmet>
-        <title>Task Page</title>
         <meta name="description" content="This is the home page of our app" />
       </Helmet>
 
       <div className="flex flex-col min-h-screen bg-gray-50/50 p-6 space-y-8">
-        {/* Summary Cards */}
-       {/* Summary Cards */}
-<div
-  className={`grid grid-cols-1 md:mt-[-30px] gap-4 sm:grid-cols-2 ${
-    user?.role === "admin" ? "lg:grid-cols-4" : "lg:grid-cols-4"
-  }`}
->
-  {/* ================= ADMIN ================= */}
-  {user?.role === "admin" && (
-    <>
-      {/* Total Projects */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Total Projects
-          </CardTitle>
-          <Briefcase className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
+        {/* Summary Cards - click par related page status filter ke saath khulta hai */}
+        <div className="grid grid-cols-1 md:mt-[-30px] gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {(SUMMARY_CARDS[user?.role] || []).map((card) => {
+            const Icon = card.icon;
+            const goToCard = () =>
+              navigate(card.path, { state: { status: card.status, period: card.period, cardTitle: card.title } });
 
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {dashboardSummary?.totalProjects ?? 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            All company projects
-          </p>
-        </CardContent>
-      </Card>
+            return (
+              <Card
+                key={card.title}
+                role="button"
+                tabIndex={0}
+                onClick={goToCard}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    goToCard();
+                  }
+                }}
+                className="cursor-pointer hover:shadow-md hover:border-primary/40 transition-all"
+              >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    {card.title}
+                  </CardTitle>
+                  <Icon className={`h-4 w-4 ${card.iconClassName}`} />
+                </CardHeader>
 
-      {/* Current Month Projects */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            This Month Projects
-          </CardTitle>
-          <Briefcase className="h-4 w-4 text-blue-500" />
-        </CardHeader>
-
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {dashboardSummary?.currentMonthProjects ?? 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Created this month
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Completed Projects */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Completed Projects
-          </CardTitle>
-          <Briefcase className="h-4 w-4 text-green-500" />
-        </CardHeader>
-
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {dashboardSummary?.completedProjects ?? 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Successfully completed
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Total Tasks */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Total Tasks
-          </CardTitle>
-          <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {dashboardSummary?.totalTasks ?? 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            All company tasks
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Current Month Tasks */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            This Month Tasks
-          </CardTitle>
-          <LayoutDashboard className="h-4 w-4 text-blue-500" />
-        </CardHeader>
-
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {dashboardSummary?.currentMonthTasks ?? 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Created this month
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Completed Tasks */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Completed Tasks
-          </CardTitle>
-          <LayoutDashboard className="h-4 w-4 text-green-500" />
-        </CardHeader>
-
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {dashboardSummary?.completedTasks ?? 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Successfully completed
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Pending Tasks */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Pending Tasks
-          </CardTitle>
-          <Clock className="h-4 w-4 text-yellow-500" />
-        </CardHeader>
-
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {dashboardSummary?.pendingTasks ?? 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Requires attention
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* In Progress Tasks */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            In Progress Tasks
-          </CardTitle>
-          <FolderOpen className="h-4 w-4 text-blue-500" />
-        </CardHeader>
-
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {dashboardSummary?.inProgressTasks ?? 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Active workflows
-          </p>
-        </CardContent>
-      </Card>
-    </>
-  )}
-
-  {/* ================= MANAGER ================= */}
-  {user?.role === "manager" && (
-    <>
-      {/* Total Tasks */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Total Assigned Tasks
-          </CardTitle>
-          <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {dashboardSummary?.totalTasks ?? 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Tasks assigned to you
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Completed Tasks */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Completed Tasks
-          </CardTitle>
-          <LayoutDashboard className="h-4 w-4 text-green-500" />
-        </CardHeader>
-
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {dashboardSummary?.completedTasks ?? 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Tasks completed by you
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Total Sub Tasks */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Total Sub Tasks
-          </CardTitle>
-          <FolderOpen className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {dashboardSummary?.totalSubTasks ?? 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Sub tasks created by you
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Completed Sub Tasks */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Completed Sub Tasks
-          </CardTitle>
-          <FolderOpen className="h-4 w-4 text-green-500" />
-        </CardHeader>
-
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {dashboardSummary?.completedSubTasks ?? 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Successfully completed
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Pending Sub Tasks */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Pending Sub Tasks
-          </CardTitle>
-          <Clock className="h-4 w-4 text-yellow-500" />
-        </CardHeader>
-
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {dashboardSummary?.pendingSubTasks ?? 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Requires attention
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* In Progress Sub Tasks */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            In Progress Sub Tasks
-          </CardTitle>
-          <FolderOpen className="h-4 w-4 text-blue-500" />
-        </CardHeader>
-
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {dashboardSummary?.inProgressSubTasks ?? 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Active sub tasks
-          </p>
-        </CardContent>
-      </Card>
-    </>
-  )}
-
-  {/* ================= EMPLOYEE ================= */}
-  {user?.role === "employee" && (
-    <>
-      {/* Total Sub Tasks */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Total Assigned Sub Tasks
-          </CardTitle>
-          <FolderOpen className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {dashboardSummary?.totalSubTasks ?? 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Sub tasks assigned to you
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Completed Sub Tasks */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Completed Sub Tasks
-          </CardTitle>
-          <FolderOpen className="h-4 w-4 text-green-500" />
-        </CardHeader>
-
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {dashboardSummary?.completedSubTasks ?? 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Successfully completed
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Pending Sub Tasks */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Pending Sub Tasks
-          </CardTitle>
-          <Clock className="h-4 w-4 text-yellow-500" />
-        </CardHeader>
-
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {dashboardSummary?.pendingSubTasks ?? 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Requires attention
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* In Progress Sub Tasks */}
-      <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            In Progress Sub Tasks
-          </CardTitle>
-          <FolderOpen className="h-4 w-4 text-blue-500" />
-        </CardHeader>
-
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {dashboardSummary?.inProgressSubTasks ?? 0}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Active sub tasks
-          </p>
-        </CardContent>
-      </Card>
-    </>
-  )}
-</div>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {dashboardSummary?.[card.valueKey] ?? 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {card.description}
+                  </p>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
 
 
         {/* Main Content Area */}
@@ -439,7 +179,7 @@ const TaskDashboard: React.FC = () => {
 
           {/* ================= LEFT TABLE ================= */}
           <Card className="shadow-sm border-gray-200">
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-row items-center justify-between gap-4">
               <div>
                 <CardTitle>
                   {user?.role === "admin"
@@ -457,6 +197,15 @@ const TaskDashboard: React.FC = () => {
                       : "Latest sub tasks assigned to you."}
                 </CardDescription>
               </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => navigate(leftTablePath)}
+              >
+                View All <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
             </CardHeader>
 
             <CardContent>
@@ -521,7 +270,8 @@ const TaskDashboard: React.FC = () => {
                     ? projects.map((project: any) => (
                         <TableRow
                           key={project._id}
-                          className="hover:bg-gray-50 transition-colors"
+                          onClick={() => openProjectDetail(project)}
+                          className="cursor-pointer hover:bg-gray-50 transition-colors"
                         >
                           <TableCell className="font-medium">
                             {project?.name || "N/A"}
@@ -556,7 +306,8 @@ const TaskDashboard: React.FC = () => {
                     ? tasks.map((task: any) => (
                         <TableRow
                           key={task._id}
-                          className="hover:bg-gray-50 transition-colors"
+                          onClick={() => openTaskDetail(task)}
+                          className="cursor-pointer hover:bg-gray-50 transition-colors"
                         >
                           <TableCell className="font-medium">
                             {task?.name || "N/A"}
@@ -599,7 +350,8 @@ const TaskDashboard: React.FC = () => {
                     ? subTasks.map((subTask: any) => (
                         <TableRow
                           key={subTask._id}
-                          className="hover:bg-gray-50 transition-colors"
+                          onClick={() => openSubTaskDetail(subTask)}
+                          className="cursor-pointer hover:bg-gray-50 transition-colors"
                         >
                           <TableCell className="font-medium">
                             {subTask?.name || "N/A"}
@@ -661,7 +413,7 @@ const TaskDashboard: React.FC = () => {
 
           {user?.role !== "employee" && (
             <Card className="shadow-sm border-gray-200">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between gap-4">
                 <div>
                   <CardTitle>
                     {user?.role === "admin"
@@ -675,6 +427,15 @@ const TaskDashboard: React.FC = () => {
                       : "Latest sub tasks created by you."}
                   </CardDescription>
                 </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => navigate(rightTablePath)}
+                >
+                  View All <ArrowRight className="h-4 w-4 ml-1" />
+                </Button>
               </CardHeader>
 
               <CardContent>
@@ -703,7 +464,8 @@ const TaskDashboard: React.FC = () => {
                         ? tasks.map((task: any) => (
                             <TableRow
                               key={task._id}
-                              className="hover:bg-gray-50 transition-colors"
+                              onClick={() => openTaskDetail(task)}
+                              className="cursor-pointer hover:bg-gray-50 transition-colors"
                             >
                               <TableCell className="font-medium">
                                 {task?.name || "N/A"}
@@ -748,7 +510,8 @@ const TaskDashboard: React.FC = () => {
                         ? subTasks.map((subTask: any) => (
                             <TableRow
                               key={subTask._id}
-                              className="hover:bg-gray-50 transition-colors"
+                              onClick={() => openSubTaskDetail(subTask)}
+                              className="cursor-pointer hover:bg-gray-50 transition-colors"
                             >
                               <TableCell className="font-medium">
                                 {subTask?.name || "N/A"}

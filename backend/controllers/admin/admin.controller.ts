@@ -42,7 +42,8 @@ export const loginAdmin = async (req: Request<{},{}, LoginAdminInput>, res: Resp
 
     if (!email || !password) return res.status(400).json({ success: false, message: "Missing required fields: email, password."});
 
-    const user = await Admin.findOne({email: email.toLowerCase().trim()}).select("+password");
+    // Admin portal se sirf admin role login kar sakta hai
+    const user = await Admin.findOne({email: email.toLowerCase().trim(), role: "admin"}).select("+password");
 
     if (!user) return res.status(401).json({success: false, message: "Invalid credentials or unauthorized company portal."});
 

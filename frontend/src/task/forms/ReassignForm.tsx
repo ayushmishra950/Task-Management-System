@@ -120,7 +120,7 @@ useEffect(() => {
           ✕
         </button>
 
-        <h2 className="text-xl font-semibold mb-4 text-center">Reassign {reassignName}</h2>
+        <h2 className="text-xl font-semibold mb-4 text-center">Transfer to Other {reassignName}</h2>
         <div className="mb-4 rounded-md bg-gray-50 p-3">
   <p className="text-xs text-gray-500">
     {reassignedType === "task" ? "Task" : "Sub Task"}
@@ -184,7 +184,7 @@ useEffect(() => {
   <Label htmlFor="reason">Reason (Optional)</Label>
   <Textarea
     id="reason"
-    placeholder="Enter reason for reassignment"
+    placeholder="Enter reason for transfer"
     value={reason}
     onChange={(e) => setReason(e.target.value)}
     rows={3}
@@ -195,7 +195,7 @@ useEffect(() => {
 
           {/* Submit Button */}
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Reassigning...' : 'Reassign'}
+            {loading ? 'Transferring...' : 'Transfer to Other'}
           </Button>
         </form>
       </div>

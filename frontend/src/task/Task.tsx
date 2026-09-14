@@ -49,6 +49,7 @@ import {
 } from "@/services/allFunctions";
 import DeleteCard from "@/components/cards/DeleteCard";
 import { useLocation, useNavigate } from "react-router-dom";
+import ActiveFilterBanner, { isCreatedThisMonth, isOverdueItem } from "@/components/cards/ActiveFilterBanner";
 import { EmployeeFormDialog } from "@/Forms/EmployeeFormDialog";
 import {
   useGetAllTaskQuery,
@@ -68,7 +69,11 @@ const Task: React.FC = () => {
 
   const user = JSON.parse(localStorage.getItem("user"));
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
+  // Dashboard card se aaye to status filter pehle se set rahe
+  const [filterStatus, setFilterStatus] = useState(location?.state?.status ?? "all");
+  const [filterThisMonth, setFilterThisMonth] = useState(location?.state?.period === "this_month");
+  // Project wise filter - Projects page se kisi project par click karke aaye to wahi project select rahe
+  const [filterProject, setFilterProject] = useState<string>(projectId ?? "all");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [initialData, setInitialData] = useState<any>(null);
   const [reasignForm, setReasignForm] = useState(false);
@@ -92,11 +97,20 @@ const Task: React.FC = () => {
   const [deleteTask, { isLoading: isDeleting }] = useDeleteTaskMutation();
   const [updateTaskStatus] = useUpdateTaskStatusMutation();
   const { data: adminTaskData, refetch: allTaskRefetch, isLoading:isTaskLoading } = useGetAllTaskQuery(
-    { projectId: projectId ? projectId : null, companyId: user?.companyId },
+    // Hamesha poori list lao, project filter frontend par lagta hai (taaki dropdown me saare projects aaye)
+    { projectId: null, companyId: user?.companyId },
     { skip: !user?.id || !user?.role || user?.role === "super_admin" || user?.role === "employee" },
   );
   const taskList = adminTaskData?.data;
   const navigate = useNavigate();
+
+  // Dashboard par task row click karke aaye to usi task ka detail card khol do
+  const dashboardViewTaskId = location?.state?.viewTaskId;
+  useEffect(() => {
+    if (!dashboardViewTaskId) return;
+    setViewTaskId(dashboardViewTaskId);
+    setTaskCard(true);
+  }, [dashboardViewTaskId]);
 
   const today = new Date();
 
@@ -115,17 +129,30 @@ const Task: React.FC = () => {
   },[allTaskRefetch, user?.id]);
   
 
+  // Dropdown ke liye list me aaye tasks se unique projects
+  const projectOptions: [string, string][] = Array.from(
+    new Map<string, string>(
+      (taskList || [])
+        .filter((t) => t?.projectId?._id)
+        .map((t) => [t.projectId._id, t.projectId.name || "Untitled Project"]),
+    ).entries(),
+  ).sort((a, b) => a[1].localeCompare(b[1]));
+  const selectedProjectName = projectOptions.find(([id]) => id === filterProject)?.[1] ?? projectName;
+
   const filteredTasks = taskList?.filter((t) => {
-    const matchesProject = projectId ? t?.projectId?._id === projectId : true;
+    const matchesProject = filterProject === "all" || t?.projectId?._id === filterProject;
     const matchesSearch = t?.name.toLowerCase().includes(search.toLowerCase());
 
     const matchesStatus =
-      filterStatus === "all" ||
+      // "All" me completed nahi dikhte, wo sirf Completed filter chunne par dikhenge
+      (filterStatus === "all" && t?.status !== "completed") ||
       (filterStatus === "overdue"
-        ? new Date(t.endDate) < today
+        ? isOverdueItem(t)
         : t.status === filterStatus);
 
-    return matchesProject && matchesSearch && matchesStatus;
+    const matchesMonth = !filterThisMonth || isCreatedThisMonth(t?.createdAt);
+
+    return matchesProject && matchesSearch && matchesStatus && matchesMonth;
   });
 
    const selectedTasks =
@@ -177,12 +204,12 @@ const Task: React.FC = () => {
     };
     try {
       const res = await reassignedTask(obj).unwrap();
-      toast({ title: "Reassign Task successfully.", description: res.message });
+      toast({ title: "Task transferred successfully.", description: res.message });
       setReasignForm(false);
     } catch (err: any) {
       console.log(err);
       toast({
-        title: "Task Reassign Error",
+        title: "Task Transfer Error",
         description:
           err?.data?.errors?.[0]?.message ||
           err.data.message ||
@@ -192,11 +219,11 @@ const Task: React.FC = () => {
     }
   };
 
-  const handleChangeStatus = async () => {
+  const handleChangeStatus = async (reason?: string) => {
     const obj = {
       id: selectedTask?._id,
       companyId: user?.companyId,
-      body: { status: newStatus },
+      body: { status: newStatus, ...(reason ? { reason } : {}) },
     };
     try {
       const res = await updateTaskStatus(obj).unwrap();
@@ -298,7 +325,7 @@ const Task: React.FC = () => {
         onConfirm={handleChangeStatus}
         onClose={() => setIsTaskStatusChangeModalOpen(false)}
       />
-      {user?.role === "admin" || user?.role === "manager" && (
+      {(user?.role === "admin" || user?.role === "manager") && (
         <TaskDetailCard
           isOpen={taskCard}
           taskId={viewTaskId}
@@ -312,7 +339,7 @@ const Task: React.FC = () => {
             <div className="flex items-center justify-between gap-2 w-full">
               {/* LEFT SIDE (always single row) */}
               <div className="flex items-center gap-2 min-w-0">
-                {projectName && (
+                {projectName && filterProject === projectId && (
                   <h1 className="text-[14px] sm:text-3xl font-bold text-gray-900 truncate">
                     Project: {projectName}
                   </h1>
@@ -375,7 +402,7 @@ const Task: React.FC = () => {
             </div>
 
             {/* DESCRIPTION (only size adjust) */}
-            {projectName && (
+            {projectName && filterProject === projectId && (
               <p className="text-gray-500 text-[11px] sm:text-sm mt-1">
                 Manage tasks for this project, track progress, and deadlines.
               </p>
@@ -383,6 +410,26 @@ const Task: React.FC = () => {
           </CardHeader>
 
           <CardContent>
+            {/* Kaunsa filter laga hai / kis dashboard card se aaye */}
+            <ActiveFilterBanner
+              sourceTitle={location?.state?.cardTitle}
+              isSourceFilter={
+                filterStatus === (location?.state?.status ?? "all") &&
+                filterThisMonth === (location?.state?.period === "this_month") &&
+                filterProject === (projectId ?? "all")
+              }
+              status={filterStatus}
+              thisMonth={filterThisMonth}
+              extraChips={filterProject !== "all" ? [`Project: ${selectedProjectName ?? "Selected"}`] : []}
+              count={filteredTasks?.length ?? 0}
+              itemLabel="tasks"
+              onClear={() => {
+                setFilterStatus("all");
+                setFilterThisMonth(false);
+                setFilterProject("all");
+              }}
+            />
+
             {/* Search & Filter */}
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
               <div className="relative flex-1">
@@ -395,6 +442,24 @@ const Task: React.FC = () => {
                 />
               </div>
 
+              {/* Project wise filter */}
+              <Select value={filterProject} onValueChange={setFilterProject}>
+                <SelectTrigger className="w-full sm:w-56">
+                  <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
+                  <SelectValue placeholder="Project" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all" className="cursor-pointer">
+                    All Projects
+                  </SelectItem>
+                  {projectOptions.map(([id, name]) => (
+                    <SelectItem key={id} value={id} className="cursor-pointer">
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
               <Select value={filterStatus} onValueChange={setFilterStatus}>
                 <SelectTrigger className="w-full sm:w-48">
                   <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
@@ -402,12 +467,12 @@ const Task: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all" className="cursor-pointer">
-                    All
+                    All (except Completed)
                   </SelectItem>
                   <SelectItem value="pending" className="cursor-pointer">
                     Pending
                   </SelectItem>
-                  <SelectItem value="active" className="cursor-pointer">
+                  <SelectItem value="in_progress" className="cursor-pointer">
                     In Progress
                   </SelectItem>
                   <SelectItem value="completed" className="cursor-pointer">
@@ -615,18 +680,6 @@ const Task: React.FC = () => {
                                     Edit Task
                                   </DropdownMenuItem>
 
-                                  <DropdownMenuItem
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setInitialData(task);
-                                      setOpenExcelForm(true);
-                                    }}
-                                    className="flex items-center gap-2 cursor-pointer"
-                                  >
-                                    <UserCheck className="h-4 w-4 text-blue-600" />
-                                    Add SubTask From Excel
-                                  </DropdownMenuItem>
-
                                   {user?.role === "admin" && (
                                     <DropdownMenuItem
                                       onClick={(e) => {
@@ -637,10 +690,25 @@ const Task: React.FC = () => {
                                       className="flex items-center gap-2 cursor-pointer"
                                     >
                                       <UserCheck className="h-4 w-4 text-blue-600" />
-                                      Reassign
+                                      Transfer to Other
                                     </DropdownMenuItem>
                                   )}
                                 </>
+                              )}
+
+                              {/* Excel se sub task - admin aur manager (manager ko sirf apne assigned tasks hi dikhte hai) */}
+                              {(user?.role === "admin" || user?.role === "manager") && (
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setInitialData(task);
+                                    setOpenExcelForm(true);
+                                  }}
+                                  className="flex items-center gap-2 cursor-pointer"
+                                >
+                                  <UserCheck className="h-4 w-4 text-blue-600" />
+                                  Add SubTask From Excel
+                                </DropdownMenuItem>
                               )}
 
                               <DropdownMenuItem

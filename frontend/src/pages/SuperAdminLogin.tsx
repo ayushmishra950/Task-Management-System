@@ -63,13 +63,13 @@ const SuperAdminLogin: React.FC = () => {
               <Briefcase className="w-8 h-8 text-primary-foreground" />
             </div>
             <h1 className="text-3xl font-bold">Super Admin</h1>
-            <p className="text-muted-foreground mt-2">Super Admin Panel</p>
+            <p className="text-muted-foreground mt-2">Super Admin Login</p>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Welcome back, Super Admin</CardTitle>
-              <CardDescription>Sign in to continue</CardDescription>
+              <CardTitle>Super Admin Login</CardTitle>
+              <CardDescription>Only Super Admins can sign in here.</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">

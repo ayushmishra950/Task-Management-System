@@ -38,7 +38,6 @@ const SettingsPage: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Settings | Job Portal</title>
       </Helmet>
 
       <div className="container mx-auto p-6 space-y-8 max-w-5xl">

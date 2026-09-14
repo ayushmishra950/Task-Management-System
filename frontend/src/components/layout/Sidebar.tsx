@@ -15,6 +15,7 @@ import {useLogoutEmployeeMutation} from "@/redux-toolkit/api/employee/auth.api";
 import {useLogoutAdminMutation} from "@/redux-toolkit/api/admin/auth.api";
 import {useLogoutClientMutation, useGetClientProfileByIdQuery} from "@/redux-toolkit/api/client/auth.api";
 import { socket } from '@/socket/socket';
+import { getLoginPathFromStorage } from '@/lib/loginPath';
 
 const Sidebar: React.FC<SidebarProps> = ({ setTaskName, setJobName, isOpen, onToggle, setActiveSidebar, setTaskSubPage, setJobSubPage, setLeadSubPage, setLeadName }) => {
   const  userData  = JSON.parse(localStorage.getItem("user"));
@@ -114,12 +115,13 @@ const handleLogout = async () => {
       console.warn("Logout API failed:", apiError?.data?.message || apiError?.data?.error || apiError?.message);
     }
   } finally {
-    const wasClient = user?.role === "client";
+    // Remove karne se pehle role padh lo, taaki usi role ke login page par bheja jaye
+    const loginPath = getLoginPathFromStorage();
 
     localStorage.removeItem("user");
     // Phir socket disconnect karo
   if (socket.connected) socket.disconnect();
-    navigate(wasClient ? "/client/login" : "/login", { replace: true });
+    navigate(loginPath, { replace: true });
     toast({
       title: "Logged out successfully.",
       description: "You have been logged out of your account.",

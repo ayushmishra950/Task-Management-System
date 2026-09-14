@@ -62,7 +62,6 @@ const Companies: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Company Page</title>
         <meta name="description" content="This is the home page of our app" />
       </Helmet>
 

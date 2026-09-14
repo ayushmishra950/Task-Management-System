@@ -63,7 +63,6 @@ const Clients: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Clients</title>
       </Helmet>
 
       <DeleteCard

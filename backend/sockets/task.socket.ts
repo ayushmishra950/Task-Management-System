@@ -136,7 +136,7 @@ export const deleteTaskSocket = async ({ user, task, subTasks}: any) => {
 
 // ==================== TASK STATUS UPDATE ====================
 
-export const updateTaskStatusSocket = async ({ user, managerId, task}: any) => {
+export const updateTaskStatusSocket = async ({ user, managerId, task, reason}: any) => {
     try {
         const io = getIO();
 
@@ -160,6 +160,7 @@ export const updateTaskStatusSocket = async ({ user, managerId, task}: any) => {
             entityId: new mongoose.Types.ObjectId(task._id),
             title: "Task Status Updated",
             message: `The status of task "${task.name}" has been updated to "${task.status}".`,
+            ...(reason ? { reason } : {}),
             isRead: false,
         });
 

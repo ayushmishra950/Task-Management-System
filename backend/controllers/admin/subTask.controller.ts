@@ -1,4 +1,5 @@
 import SubTask from "../../models/subTask.model.ts";
+import Task from "../../models/task.model.ts";
 import type {Request, Response, NextFunction} from "express";
 import {subTaskValidationSchema,deleteSubTaskByIdValidationSchema,updateSubTaskStatusValidationSchema,updateSubTaskValidationSchema,getSubTaskValidationSchema, getSubTaskByIdValidationSchema} from "../../schemas/subTask.schema.ts";
 import {getSubTaskData} from "../../services/subTask.service.ts";
@@ -22,6 +23,13 @@ type UpdateSubTaskStatusParams = z.infer<typeof updateSubTaskStatusValidationSch
 export const createSubTask = async(req:Request<{}, {}, SubTaskInput>, res:Response, next:NextFunction) => {
 try {
      const {description,remarks, ...restBody} = req.body;
+
+     // Manager sirf apne assigned (parent) task ke sub tasks hi bana sakta hai
+     if (req.user?.role === "manager") {
+       const parentTask = await Task.findOne({ _id: (req.body as any)?.taskId, companyId: req.user?.companyId, managerId: req.user?.id }).select("_id");
+       if (!parentTask) return res.status(403).json({success:false, message:"You can create sub tasks only for tasks assigned to you."});
+     }
+
      const subTaskData = {...restBody, ...description && {description}, ...remarks && {remarks}}
       const subTask = await SubTask.create(subTaskData);     
       if(!subTask) return res.status(404).json({success:false, message:"Task create failed."});
@@ -109,10 +117,12 @@ catch(error:any){
 
 export const updateSubTaskStatus = async(req:Request<UpdateSubTaskStatusParams, {}, UpdateSubTaskStatusInput>, res:Response, next:NextFunction) => {
 try {
-      const subTask = await SubTask.findOneAndUpdate({_id:req.params.id, companyId:req.params.companyId}, {$set:{status:req.body.status}},{new:true, runValidators:true});
+      // Reason optional hai - khaali ho to purana reason bhi hat jata hai
+      const reason = req.body.reason?.trim() || "";
+      const subTask = await SubTask.findOneAndUpdate({_id:req.params.id, companyId:req.params.companyId}, {$set:{status:req.body.status, statusReason:reason}},{new:true, runValidators:true});
       if(!subTask) return res.status(404).json({success:false, message:"Sub Task Not Found."});
 
-      await updateSubTaskStatusSocket({user:req.user, employeeId:subTask.employeeId.toString(), subTask});
+      await updateSubTaskStatusSocket({user:req.user, employeeId:subTask.employeeId.toString(), subTask, reason});
 
       res.status(200).json({success:true, message:"Sub Task Status Update Successfully.", data:subTask})
 }

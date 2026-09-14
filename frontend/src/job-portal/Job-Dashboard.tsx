@@ -119,7 +119,6 @@ const AdminJobDashboard: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Admin Dashboard | Job Portal</title>
       </Helmet>
 
       <div className="flex flex-col min-h-screen md:mt-[-40px] bg-gray-50/40 space-y-6 p-6">

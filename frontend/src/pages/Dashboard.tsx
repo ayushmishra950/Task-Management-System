@@ -128,7 +128,6 @@ const Dashboard: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Dashboard Page</title>
         <meta name="description" content="This is the home page of our app" />
       </Helmet>
 

@@ -151,7 +151,6 @@ const attendanceUIState = useMemo(() => {
   return (
     <>
     <Helmet>
-        <title>Attendance Page</title>
         <meta name="description" content="This is the home page of our app" />
       </Helmet>
       <AttendanceForm

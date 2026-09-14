@@ -107,5 +107,5 @@ export const updateTaskStatusValidationSchema = z.object({
     }),
 
     query:z.object({}).optional(),
-    body:z.object({status:statusEnum}),
+    body:z.object({status:statusEnum, reason:z.string().trim().max(500, {message:"Reason must be at most 500 characters."}).optional()}),
 });

@@ -104,11 +104,11 @@ const ReassignedTask: React.FC = () => {
         <Card className="border-red-100 shadow-sm">
           <CardHeader>
             <CardTitle className="text-[16px] sm:text-xl font-semibold">
-              Reassigned History ({filteredItems.length})
+              Transfer History ({filteredItems.length})
             </CardTitle>
 
             <CardDescription className="text-[11px] sm:text-sm mt-1">
-              View the complete history of reassigned tasks and sub tasks.
+              View the complete history of tasks and sub tasks transferred to others.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -175,7 +175,7 @@ const ReassignedTask: React.FC = () => {
                     </TableHead>
 
                     <TableHead className="hidden md:table-cell">
-                      Reassigned By
+                      Transferred By
                     </TableHead>
 
                     <TableHead className="hidden lg:table-cell">
@@ -183,7 +183,7 @@ const ReassignedTask: React.FC = () => {
                     </TableHead>
 
                     <TableHead className="px-1 md:px-4">
-                      Reassigned At
+                      Transferred At
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -229,7 +229,7 @@ const ReassignedTask: React.FC = () => {
                         colSpan={8}
                         className="h-24 text-center text-red-500"
                       >
-                        No reassigned history found.
+                        No transfer history found.
                       </TableCell>
                     </TableRow>
                   ) : filteredItems.length > 0 ? (
@@ -373,7 +373,7 @@ const ReassignedTask: React.FC = () => {
                         colSpan={8}
                         className="h-20 text-center text-sm"
                       >
-                        No reassigned history found.
+                        No transfer history found.
                       </TableCell>
                     </TableRow>
                   )}

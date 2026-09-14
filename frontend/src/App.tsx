@@ -45,6 +45,7 @@ import LeadList from "@/lead-management/LeadList";
 import ProductList from "@/lead-management/ProductList";
 import { AuthProvider } from "./contexts/AuthContext";
 import ClientLogin from "@/pages/ClientLogin";
+import { getLoginPathForRole } from "@/lib/loginPath";
 import ClientLayout from "@/client-portal/ClientLayout";
 import ClientDashboard from "@/client-portal/Client-Dashboard";
 import ClientRequests from "@/client-portal/Client-Requests";
@@ -90,7 +91,7 @@ const getHomePath = () => {
   return storedUser.role === "client" ? "/client" : "/tasks";
 };
 
-const getLoginPath = () => (getStoredUser()?.role === "client" ? "/client/login" : "/login");
+const getLoginPath = () => getLoginPathForRole(getStoredUser()?.role);
 
 const ClientRoute = ({ children }: { children: React.ReactNode }) => (
   getStoredUser()?.role === "client" ? children : <Navigate to={getHomePath()} replace />

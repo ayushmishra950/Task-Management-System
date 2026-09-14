@@ -40,8 +40,16 @@ const SubTaskForm: React.FC<SubTaskFormModalProps> = ({
   const loading = createLoading || updateLoading;
 
     const {data:employeeData, isLoading:employeeLoading, error:employeeError} = useGetAllEmployeeQuery({companyId:user?.companyId, status:"ACTIVE"}, {skip:!user?.id || !user?.role});
-   const {data:taskData, error} = useGetAllTaskQuery({projectId:"", companyId:user?.companyId}, {skip:user?.role === "super_admin" || !user?.id || !user?.role});
-   const taskList = taskData?.data ?? [];
+   const {data:taskData, error} = useGetAllTaskQuery({projectId:"", companyId:user?.companyId}, {skip:user?.role === "super_admin" || !user?.id || !user?.role, refetchOnMountOrArgChange:true});
+   // Manager ko Parent Task list me sirf wahi tasks dikhne chahiye jo use assign hue hai aur completed nahi hai.
+   // Edit ke time pehle se selected parent task (chahe completed ho) list me rehta hai, taaki value khaali na dikhe.
+   const currentParentTaskId = (taskId || initialData?.taskId?._id || initialData?.taskId)?.toString();
+   const taskList = (taskData?.data ?? []).filter((t: any) => {
+     if (user?.role !== "manager") return true;
+     const isAssignedToManager = (t?.managerId?._id ?? t?.managerId)?.toString() === user?.id?.toString();
+     const isCurrentParent = currentParentTaskId && t?._id?.toString() === currentParentTaskId;
+     return isAssignedToManager && (t?.status !== "completed" || isCurrentParent);
+   });
  
    const isAdmin = user?.role === "admin";
 const isManager = user?.role === "manager";

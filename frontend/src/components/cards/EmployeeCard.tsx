@@ -244,7 +244,6 @@ const EmployeeDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Helmet>
-        <title>Employe Detail Page</title>
         <meta name="description" content="This is the home page of our app" />
       </Helmet>
       {pdfOpenForm && <SalarySlipCard data={singlePayrolls} onClose={() => setPdfOpenForm(false)} />}

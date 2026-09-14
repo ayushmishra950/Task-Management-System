@@ -90,7 +90,6 @@ const Departments: React.FC = () => {
     <>
       <EmployeeListModal open={employeeListDialog} onClose={() => { setEmployeeListDialog(false) }} data={filterEmployees} />
       <Helmet>
-        <title>Department Page</title>
         <meta name="description" content="This is the home page of our app" />
       </Helmet>
       <div className="space-y-6">

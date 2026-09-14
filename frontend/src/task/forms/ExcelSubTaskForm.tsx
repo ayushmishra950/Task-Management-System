@@ -177,7 +177,8 @@ export const ExcelSubTaskForm = ({
     if (!validateForm()) return;
 
     try {
-      const taskId = intialData?.taskId?._id;
+      // Task page se task object hi aata hai (uska _id hi taskId hai); sub task object ho to uska taskId
+      const taskId = intialData?.taskId?._id ?? intialData?._id;
 
       const createdBy = user?.id;
 

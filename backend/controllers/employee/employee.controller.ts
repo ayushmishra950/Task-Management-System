@@ -21,7 +21,8 @@ export const loginEmployee = async (req: Request<{},{}, LoginEmployeeInput>, res
 
     if (!email || !password) return res.status(400).json({ success: false, message: "Missing required fields: email, password."});
 
-    const user = await User.findOne({email: email.toLowerCase().trim()}).select("+password");
+    // Is portal se sirf employee/manager login kar sakte hai (admin/client ke apne login page hai)
+    const user = await User.findOne({email: email.toLowerCase().trim(), role: {$in: ["employee", "manager"]}}).select("+password");
 
     if (!user) return res.status(401).json({success: false, message: "Invalid credentials or unauthorized company portal."});
 

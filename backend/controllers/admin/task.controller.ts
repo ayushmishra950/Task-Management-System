@@ -99,10 +99,12 @@ catch(error:any){
 
 export const updateTaskStatus = async(req:Request<UpdateTaskStatusParams, {}, UpdateTaskStatusInput>, res:Response, next:NextFunction) => {
 try {
-      const task = await Task.findOneAndUpdate({_id:req.params.id, companyId:req.params.companyId}, {$set:{status:req.body.status}},{new:true, runValidators:true});
+      // Reason optional hai - khaali ho to purana reason bhi hat jata hai
+      const reason = req.body.reason?.trim() || "";
+      const task = await Task.findOneAndUpdate({_id:req.params.id, companyId:req.params.companyId}, {$set:{status:req.body.status, statusReason:reason}},{new:true, runValidators:true});
       if(!task) return res.status(404).json({success:false, message:"Sub Task Not Found."});
-      
-      await updateTaskStatusSocket({user:req.user, managerId:task?.managerId, task});
+
+      await updateTaskStatusSocket({user:req.user, managerId:task?.managerId, task, reason});
       
       res.status(200).json({success:true, message:"Task Status Update Successfully.", data:task})
 }

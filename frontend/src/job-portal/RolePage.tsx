@@ -76,7 +76,6 @@ const RolePage: React.FC = () => {
       />
 
       <Helmet>
-        <title>Roles | Job Portal</title>
       </Helmet>
 
       <div className="flex flex-col min-h-screen bg-gray-50/40 p-6 space-y-6">

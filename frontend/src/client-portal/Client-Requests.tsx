@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Helmet } from "react-helmet-async";
+import { useLocation } from "react-router-dom";
+import ActiveFilterBanner from "@/components/cards/ActiveFilterBanner";
 import { useToast } from "@/hooks/use-toast";
 import DeleteCard from "@/components/cards/DeleteCard";
 import ClientRequestForm from "./forms/ClientRequestForm";
@@ -27,8 +29,11 @@ import {
 const ClientRequests: React.FC = () => {
   const { toast } = useToast();
 
+  const location = useLocation();
+
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
+  // Dashboard card se aaye to status filter pehle se set rahe
+  const [filterStatus, setFilterStatus] = useState(location?.state?.status ?? "all");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [initialData, setInitialData] = useState<any | null>(null);
   const [detailRequest, setDetailRequest] = useState<any | null>(null);
@@ -38,6 +43,16 @@ const ClientRequests: React.FC = () => {
   const [deleteRequest, { isLoading: isDeleting }] = useDeleteMyClientRequestMutation();
 
   const requests = data?.data || [];
+
+  // Dashboard par request click karke aaye to list load hote hi uska detail khol do (sirf ek baar)
+  const viewRequestId = location?.state?.viewRequestId;
+  const [autoOpenedRequestId, setAutoOpenedRequestId] = useState("");
+  useEffect(() => {
+    if (!viewRequestId || autoOpenedRequestId === viewRequestId || !requests.length) return;
+    const request = requests.find((item: any) => item?._id === viewRequestId);
+    if (request) setDetailRequest(request);
+    setAutoOpenedRequestId(viewRequestId);
+  }, [viewRequestId, requests, autoOpenedRequestId]);
 
   // Admin review kare to list turant update ho
   useEffect(() => {
@@ -87,7 +102,6 @@ const ClientRequests: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>My Requests</title>
       </Helmet>
 
       <DeleteCard
@@ -127,6 +141,16 @@ const ClientRequests: React.FC = () => {
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {/* Kaunsa filter laga hai / kis dashboard card se aaye */}
+          <ActiveFilterBanner
+            sourceTitle={location?.state?.cardTitle}
+            isSourceFilter={filterStatus === (location?.state?.status ?? "all")}
+            status={filterStatus}
+            count={filteredRequests.length}
+            itemLabel="requests"
+            onClear={() => setFilterStatus("all")}
+          />
+
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

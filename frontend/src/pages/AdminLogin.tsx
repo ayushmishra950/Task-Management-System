@@ -62,13 +62,13 @@ const AdminLogin: React.FC = () => {
               <Briefcase className="w-8 h-8 text-primary-foreground" />
             </div>
             <h1 className="text-3xl font-bold">OfficeHub Admin</h1>
-            <p className="text-muted-foreground mt-2">Admin Panel</p>
+            <p className="text-muted-foreground mt-2">Admin Login</p>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Welcome back, Admin</CardTitle>
-              <CardDescription>Sign in to continue</CardDescription>
+              <CardTitle>Admin Login</CardTitle>
+              <CardDescription>Only Admins can sign in here.</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">

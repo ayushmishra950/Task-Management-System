@@ -425,7 +425,7 @@ export const taskSubMenu = [
   { label: 'Tasks', path: '/tasks/task', roles: ["admin", "manager"] },
   { label: 'Sub Tasks', path: '/tasks/sub-task', roles: ["admin", "manager", "employee"] },
   { label: 'Completed Tasks', path: '/tasks/completed-task', roles: ["admin", "manager", "employee"] },
-  { label: 'Reassigned Tasks', path: '/tasks/reassigned-task', roles: ["admin", "manager", "employee"] },
+  { label: 'Transfer to Other', path: '/tasks/reassigned-task', roles: ["admin", "manager", "employee"] },
   // { label: 'Overdue Tasks', path: '/tasks/overdue', roles: ["admin", "manager", "employee"] },
   { label: "Task Manager", path: "/tasks/manager", roles: ["admin"] },
   { label: 'Clients', path: '/tasks/clients', roles: ["admin"] },
@@ -570,8 +570,8 @@ export const headingManage = (path: string, role: string) => {
 
 if (path === "/tasks/reassigned-task") {
   return {
-    title: "Reassigned Tasks",
-    description: "View and manage tasks that have been reassigned.",
+    title: "Transfer to Other",
+    description: "View and manage tasks that have been transferred to others.",
     icon: "RefreshCw",
   };
 }

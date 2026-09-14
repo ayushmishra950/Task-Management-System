@@ -152,6 +152,8 @@ export interface Notification {
   _id: string;
   userId: string;
   message: string;
+  /** Status change ka reason (optional) */
+  reason?: string;
   type: string;
   referenceId?: string | null;
   read: boolean;

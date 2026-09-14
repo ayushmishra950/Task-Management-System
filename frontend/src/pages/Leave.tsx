@@ -228,7 +228,6 @@ const Leave: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Leave Page</title>
         <meta name="description" content="This is the home page of our app" />
       </Helmet>
       <div className="space-y-6">

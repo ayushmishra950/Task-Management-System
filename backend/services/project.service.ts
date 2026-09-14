@@ -412,10 +412,14 @@ export const handleGetDashboardSummary = async ({ user }: any) => {
 
     const nextMonthStart = new Date( now.getFullYear(), now.getMonth() + 1, 1);
 
+    // Overdue = endDate aaj se pehle nikal chuki hai aur kaam completed/cancelled nahi hua
+    const overdueFilter = { endDate: { $lt: now }, status: { $nin: ["completed", "cancelled"] as ("completed" | "cancelled")[] } };
+
    
     if (role === "admin") {
       const [ totalProjects, currentMonthProjects, completedProjects,
  totalTasks, currentMonthTasks, completedTasks, pendingTasks, inProgressTasks,
+ overdueProjects, overdueTasks,
       ] = await Promise.all([
         // Total Projects
         Project.countDocuments({ companyId}),
@@ -443,12 +447,19 @@ export const handleGetDashboardSummary = async ({ user }: any) => {
 
         // In Progress Tasks
         Task.countDocuments({ companyId, status: "in_progress"}),
+
+        // Overdue Projects
+        Project.countDocuments({ companyId, ...overdueFilter }),
+
+        // Overdue Tasks
+        Task.countDocuments({ companyId, ...overdueFilter }),
       ]);
 
       return {
         success: true,
         data: { totalProjects, currentMonthProjects, completedProjects,
  totalTasks, currentMonthTasks, completedTasks, pendingTasks, inProgressTasks,
+ overdueProjects, overdueTasks,
         },
       };
     }
@@ -458,6 +469,7 @@ export const handleGetDashboardSummary = async ({ user }: any) => {
     // =========================
     if (role === "manager") {
       const [ totalTasks, completedTasks, totalSubTasks, completedSubTasks, pendingSubTasks, inProgressSubTasks,
+ overdueTasks, overdueSubTasks,
       ] = await Promise.all([
         // Tasks assigned to manager
         Task.countDocuments({ companyId, managerId: id}),
@@ -476,11 +488,17 @@ export const handleGetDashboardSummary = async ({ user }: any) => {
 
         // In Progress SubTasks created by manager
         SubTask.countDocuments({ companyId, createdBy: id, status: "in_progress"}),
+
+        // Overdue Tasks assigned to manager
+        Task.countDocuments({ companyId, managerId: id, ...overdueFilter }),
+
+        // Overdue SubTasks created by manager
+        SubTask.countDocuments({ companyId, createdBy: id, ...overdueFilter }),
       ]);
 
       return {
         success: true,
-        data: { totalTasks, completedTasks, totalSubTasks, completedSubTasks, pendingSubTasks, inProgressSubTasks },
+        data: { totalTasks, completedTasks, totalSubTasks, completedSubTasks, pendingSubTasks, inProgressSubTasks, overdueTasks, overdueSubTasks },
       };
     }
 
@@ -488,7 +506,7 @@ export const handleGetDashboardSummary = async ({ user }: any) => {
     // EMPLOYEE
     // =========================
     if (role === "employee") {
-      const [ totalSubTasks, completedSubTasks, pendingSubTasks, inProgressSubTasks] = await Promise.all([
+      const [ totalSubTasks, completedSubTasks, pendingSubTasks, inProgressSubTasks, overdueSubTasks] = await Promise.all([
         // SubTasks assigned to employee
         SubTask.countDocuments({ companyId, employeeId: id}),
 
@@ -500,11 +518,14 @@ export const handleGetDashboardSummary = async ({ user }: any) => {
 
         // In Progress SubTasks
         SubTask.countDocuments({ companyId, employeeId: id, status: "in_progress"}),
+
+        // Overdue SubTasks
+        SubTask.countDocuments({ companyId, employeeId: id, ...overdueFilter }),
       ]);
 
       return {
         success: true,
-        data: { totalSubTasks, completedSubTasks, pendingSubTasks, inProgressSubTasks },
+        data: { totalSubTasks, completedSubTasks, pendingSubTasks, inProgressSubTasks, overdueSubTasks },
       };
     }
 

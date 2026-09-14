@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import SubTask from "../models/subTask.model.ts";
+import Task from "../models/task.model.ts";
 import SubTaskAssignmentHistory from "../models/subTask.history.model.ts";
 import * as XLSX from "xlsx";
 import {createSubTaskSocket, updateSubTaskSocket, reassignSubTaskSocket} from "../sockets/subTask.socket.ts";
@@ -264,6 +265,15 @@ export const handleCreateSubTasksFromExcel = async ({user,createdBy,employeeId,t
     if (!mongoose.Types.ObjectId.isValid(user.companyId)) {
       await session.abortTransaction();
       return { success: false, message: "Invalid Company ID.",};
+    }
+
+    // Manager sirf apne assigned task ke sub tasks hi Excel se bana sakta hai
+    if (user?.role === "manager") {
+      const parentTask = await Task.findOne({ _id: taskId, companyId: user.companyId, managerId: user.id }).select("_id").session(session);
+      if (!parentTask) {
+        await session.abortTransaction();
+        return { success: false, message: "You can create sub tasks only for tasks assigned to you." };
+      }
     }
 
     const workbook = XLSX.read(file.buffer, { type: "buffer", cellDates: true});

@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDateTime, getPriorityColor } from "@/services/allFunctions";
 import DeleteCard from "@/components/cards/DeleteCard";
 import { useLocation } from "react-router-dom";
+import ActiveFilterBanner, { isOverdueItem } from "@/components/cards/ActiveFilterBanner";
 import {
   useGetAllSubTaskQuery,
   useUpdateSubTaskStatusMutation,
@@ -34,7 +35,10 @@ const SubTask: React.FC = () => {
   const projectName = location?.state?.projectName;
 
   const [search, setSearch] = useState<string>("");
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  // Dashboard card se aaye to status filter pehle se set rahe
+  const [filterStatus, setFilterStatus] = useState<string>(location?.state?.status ?? "all");
+  // Task wise filter - Tasks page se kisi task par click karke aaye to wahi task select rahe
+  const [filterTask, setFilterTask] = useState<string>(taskId ?? "all");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [initialData, setInitialData] = useState<any>(null);
   const [isTaskStatusChangeModalOpen, setIsTaskStatusChangeModalOpen] =
@@ -55,22 +59,47 @@ const SubTask: React.FC = () => {
   );
   const [reassignedSubTask, { isLoading }] = useReassignedSubTaskMutation();
   const { data: adminSubTaskData, error, refetch:subTaskRefetch, isLoading:isSubTaskLoading } = useGetAllSubTaskQuery({
-    taskId: taskId ? taskId : "",
+    // Hamesha poori list lao, task filter frontend par lagta hai (taaki dropdown me saare tasks aaye)
+    taskId: "",
     companyId: user?.companyId,
   }, {skip:!user?.id || !user?.role});
   const subTaskList = adminSubTaskData?.data;
   const today = new Date();
 
+  // Dashboard par sub task row click karke aaye to list load hote hi uska detail card khol do (sirf ek baar)
+  const viewSubTaskId = location?.state?.viewSubTaskId;
+  const [autoOpenedSubTaskId, setAutoOpenedSubTaskId] = useState("");
+  useEffect(() => {
+    if (!viewSubTaskId || autoOpenedSubTaskId === viewSubTaskId || !subTaskList?.length) return;
+    const subTask = subTaskList.find((item: any) => item?._id === viewSubTaskId);
+    if (subTask) {
+      setInitialData(subTask);
+      setIsSubTaskDetailCardOpen(true);
+    }
+    setAutoOpenedSubTaskId(viewSubTaskId);
+  }, [viewSubTaskId, subTaskList, autoOpenedSubTaskId]);
+
+  // Dropdown ke liye list me aaye sub tasks se unique tasks
+  const taskOptions: [string, string][] = Array.from(
+    new Map<string, string>(
+      (subTaskList || [])
+        .filter((t) => t?.taskId?._id)
+        .map((t) => [t.taskId._id, t.taskId.name || "Untitled Task"]),
+    ).entries(),
+  ).sort((a, b) => a[1].localeCompare(b[1]));
+  const selectedTaskName = taskOptions.find(([id]) => id === filterTask)?.[1] ?? taskName;
+
   const filteredSubTasks = subTaskList?.filter((t) => {
-    const matchesTasks = taskId ? t?.taskId?._id === taskId : true;
+    const matchesTasks = filterTask === "all" || t?.taskId?._id === filterTask;
     const matchesSearch = t?.name
       ?.toLowerCase()
       ?.includes(search?.toLowerCase());
 
     const matchesStatus =
-      filterStatus === "all" ||
+      // "All" me completed nahi dikhte, wo sirf Completed filter chunne par dikhenge
+      (filterStatus === "all" && t?.status !== "completed") ||
       (filterStatus === "overdue"
-        ? new Date(t.endDate) < today
+        ? isOverdueItem(t)
         : t?.status === filterStatus);
 
     return matchesTasks && matchesSearch && matchesStatus;
@@ -135,12 +164,12 @@ const SubTask: React.FC = () => {
     }
   };
 
-  const handleChangeStatus = async () => {
+  const handleChangeStatus = async (reason?: string) => {
     try {
       const res = await updateSubTaskStatus({
         id: selectedSubTask?._id,
         companyId: user?.companyId,
-        body: { status: newStatus },
+        body: { status: newStatus, ...(reason ? { reason } : {}) },
       });
       toast({ title: "Sub Task Status.", description: res.data.message });
       setIsTaskStatusChangeModalOpen(false);
@@ -165,14 +194,14 @@ const SubTask: React.FC = () => {
     try {
       const res = await reassignedSubTask(obj).unwrap();
       toast({
-        title: "Reassign Sub Task Successfully.",
+        title: "Sub Task transferred successfully.",
         description: res.message,
       });
       setReasignForm(false);
     } catch (err: any) {
       console.log(err);
       toast({
-        title: "Reassign Sub Task Error",
+        title: "Sub Task Transfer Error",
         description: err?.data?.errors?.[0]?.message || err.data.message,
         variant: "destructive",
       });
@@ -262,7 +291,7 @@ const SubTask: React.FC = () => {
             <div className="flex items-center justify-between gap-2">
               {/* LEFT SIDE */}
               <div className="flex items-center gap-2 min-w-0">
-                {taskId && projectName && taskName ? (
+                {taskId && filterTask === taskId && projectName && taskName ? (
                   <>
                     <h1 className="text-[14px] sm:text-3xl font-bold text-gray-900 truncate">
                       {projectName} &gt; {taskName}
@@ -325,7 +354,7 @@ const SubTask: React.FC = () => {
             </div>
 
             {/* DESCRIPTION */}
-            {taskId && projectName && taskName && (
+            {taskId && filterTask === taskId && projectName && taskName && (
               <p className="text-gray-500 text-[11px] sm:text-sm mt-1">
                 Manage tasks for this project, track progress, and deadlines.
               </p>
@@ -333,6 +362,20 @@ const SubTask: React.FC = () => {
           </CardHeader>
 
           <CardContent>
+            {/* Kaunsa filter laga hai / kis dashboard card se aaye */}
+            <ActiveFilterBanner
+              sourceTitle={location?.state?.cardTitle}
+              isSourceFilter={filterStatus === (location?.state?.status ?? "all") && filterTask === (taskId ?? "all")}
+              status={filterStatus}
+              extraChips={filterTask !== "all" ? [`Task: ${selectedTaskName ?? "Selected"}`] : []}
+              count={filteredSubTasks?.length ?? 0}
+              itemLabel="sub tasks"
+              onClear={() => {
+                setFilterStatus("all");
+                setFilterTask("all");
+              }}
+            />
+
             {/* Search and Filter */}
             <div className="flex flex-col md:flex-row gap-4 mb-6">
               <div className="relative flex-1">
@@ -344,6 +387,25 @@ const SubTask: React.FC = () => {
                   className="pl-8"
                 />
               </div>
+              {/* Task wise filter */}
+              <div className="w-full md:w-56">
+                <Select value={filterTask} onValueChange={setFilterTask}>
+                  <SelectTrigger>
+                    <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
+                    <SelectValue placeholder="Filter by Task" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all" className="cursor-pointer">
+                      All Tasks
+                    </SelectItem>
+                    {taskOptions.map(([id, name]) => (
+                      <SelectItem key={id} value={id} className="cursor-pointer">
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="w-full md:w-48">
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
                   <SelectTrigger>
@@ -351,11 +413,11 @@ const SubTask: React.FC = () => {
                     <SelectValue placeholder="Filter by Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="all">All (except Completed)</SelectItem>
                     <SelectItem value="pending" className="cursor-pointer">
                       Pending
                     </SelectItem>
-                    <SelectItem value="active" className="cursor-pointer">
+                    <SelectItem value="in_progress" className="cursor-pointer">
                       In Progress
                     </SelectItem>
                     <SelectItem value="completed" className="cursor-pointer">
@@ -557,7 +619,7 @@ const SubTask: React.FC = () => {
                                 className="flex items-center gap-2 cursor-pointer"
                               >
                                 <UserCheck className="h-4 w-4 text-blue-600" />
-                                Reassign
+                                Transfer to Other
                               </DropdownMenuItem></>}
                               <DropdownMenuItem
                                 onClick={(e) => {

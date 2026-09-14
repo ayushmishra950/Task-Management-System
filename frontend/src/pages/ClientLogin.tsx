@@ -67,8 +67,8 @@ const ClientLogin: React.FC = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Welcome back</CardTitle>
-              <CardDescription>Sign in with the credentials your admin shared</CardDescription>
+              <CardTitle>Client Login</CardTitle>
+              <CardDescription>Only Clients can sign in here, using the credentials your admin shared.</CardDescription>
             </CardHeader>
 
             <CardContent>

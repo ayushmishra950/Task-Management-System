@@ -52,7 +52,8 @@ import {
   getPriorityColor,
 } from "@/services/allFunctions";
 import DeleteCard from "@/components/cards/DeleteCard";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import ActiveFilterBanner, { isCreatedThisMonth, isOverdueItem } from "@/components/cards/ActiveFilterBanner";
 import TaskForm from "./forms/TaskForm";
 import SubTaskForm from "./forms/SubTaskForm";
 import {useGetAllProjectQuery,useDeleteProjectMutation,useUpdateProjectStatusMutation} from "@/redux-toolkit/api/admin/project.api";
@@ -74,7 +75,10 @@ const Project: React.FC = () => {
   const { toast } = useToast();
   const user = JSON.parse(localStorage.getItem("user"));
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
+  const location = useLocation();
+  // Dashboard card se aaye to status filter pehle se set rahe
+  const [filterStatus, setFilterStatus] = useState(location?.state?.status ?? "all");
+  const [filterThisMonth, setFilterThisMonth] = useState(location?.state?.period === "this_month");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isProjectDetailOpen, setIsProjectDetailOpen] = useState(false);
   const [isTaskStatusChangeModalOpen, setIsTaskStatusChangeModalOpen] =
@@ -104,6 +108,14 @@ const Project: React.FC = () => {
   );
   const projects = data?.data || [];
   const navigate = useNavigate();
+
+  // Dashboard par project row click karke aaye to usi project ka detail card khol do
+  const dashboardViewProjectId = location?.state?.viewProjectId;
+  useEffect(() => {
+    if (!dashboardViewProjectId) return;
+    setViewSelectedProjectId(dashboardViewProjectId);
+    setIsProjectDetailOpen(true);
+  }, [dashboardViewProjectId]);
 
   useEffect(() => {
       const handleNotification = async(data) => {
@@ -147,20 +159,23 @@ const Project: React.FC = () => {
     const matchesSearch = t.name.toLowerCase().includes(search.toLowerCase());
 
     const matchesStatus =
-      filterStatus === "all" ||
+      // "All" me completed nahi dikhte, wo sirf Completed filter chunne par dikhenge
+      (filterStatus === "all" && t?.status !== "completed") ||
       (filterStatus === "overdue"
-        ? new Date(t.endDate) < today
+        ? isOverdueItem(t)
         : t.status === filterStatus);
 
-    return matchesSearch && matchesStatus;
+    const matchesMonth = !filterThisMonth || isCreatedThisMonth((t as any)?.createdAt);
+
+    return matchesSearch && matchesStatus && matchesMonth;
   });
 
-  const handleChangeStatus = async () => {
+  const handleChangeStatus = async (reason?: string) => {
     try {
       const res = await updateProjectStatus({
         id: selectedProject?._id,
         companyId: user?.companyId,
-        body: { status: newStatus },
+        body: { status: newStatus, ...(reason ? { reason } : {}) },
       }).unwrap();
       toast({ title: "Project Status.", description: res.message });
       setIsTaskStatusChangeModalOpen(false);
@@ -310,6 +325,23 @@ const Project: React.FC = () => {
           </CardHeader>
 
           <CardContent>
+            {/* Kaunsa filter laga hai / kis dashboard card se aaye */}
+            <ActiveFilterBanner
+              sourceTitle={location?.state?.cardTitle}
+              isSourceFilter={
+                filterStatus === (location?.state?.status ?? "all") &&
+                filterThisMonth === (location?.state?.period === "this_month")
+              }
+              status={filterStatus}
+              thisMonth={filterThisMonth}
+              count={filteredProjects?.length ?? 0}
+              itemLabel="projects"
+              onClear={() => {
+                setFilterStatus("all");
+                setFilterThisMonth(false);
+              }}
+            />
+
             {/* Search + Filter */}
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
               <div className="relative flex-1">
@@ -329,12 +361,12 @@ const Project: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem className="cursor-pointer" value="all">
-                    All
+                    All (except Completed)
                   </SelectItem>
                   <SelectItem className="cursor-pointer" value="pending">
                     Pending
                   </SelectItem>
-                  <SelectItem className="cursor-pointer" value="active">
+                  <SelectItem className="cursor-pointer" value="in_progress">
                     In Progress
                   </SelectItem>
                   <SelectItem className="cursor-pointer" value="completed">
